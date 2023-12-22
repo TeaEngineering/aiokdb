@@ -9,7 +9,7 @@ The layout of the repository, documentation and code borrows heavily from aiored
 
 [qPython](https://github.com/exxeleron/qPython) is a widely used library for this task and it maps objects to Pandas Dataframes which might be more suitable for the majority of applications.
 
-This library takes a different approach and aims to replicate the use of using the KDB C-library functions. It was built working from the publically documented [Serialization Examples](https://code.kx.com/q/kb/serialization/) and [C API for kdb+](https://code.kx.com/q/wp/capi/) pages. Users might also need to be familiar with [k.h](https://github.com/KxSystems/ffi/blob/master/include/k.h).
+This library takes a different approach and aims to replicate using the KDB C-library functions. It was built working from the publically documented [Serialization Examples](https://code.kx.com/q/kb/serialization/) and [C API for kdb+](https://code.kx.com/q/wp/capi/) pages. Users might also need to be familiar with [k.h](https://github.com/KxSystems/ffi/blob/master/include/k.h).
 
 A simple example:
 
@@ -28,11 +28,14 @@ The `result` object is a K-like Python object, having the usual signed integer t
 
 Arrays are implemtned with subtypes that use [Python's native arrays module](https://docs.python.org/3/library/array.html) for efficient array types.
 
-There is a serialiser `
+Serialisation is handled by `b9` which returns a python bytes, and `d9` which takes a bytes and returns a K-object.
 
-Python manages garbage colleciton of our K-like objects, none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` have no equivelent.
+Python manages garbage colleciton of our K-like objects, so none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` have no equivelent.
 
 Atoms are created by `ka`, `kb`, `ku`, `kg`, `kh`, `ki`, `kj`, `ke`, `kf`, `kc`, `ks`, `kt`, `kd`, `kz`, `ktj`
 Lists with `ktn` and `knk`
 
-Serialisation is handled by `b9` which returns a python bytes, and `d9` which takes a bytes and returns a K-object.
+## Tests
+
+Just run `pytest` in the root directory.
+
