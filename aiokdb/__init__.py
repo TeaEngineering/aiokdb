@@ -32,14 +32,30 @@ class TypeEnum(enum.IntEnum):
     KV = 18  # 4    second    int    kI
     KT = 19  # 4    time      int    kI (millisecond)
     KZ = 15  # 8    datetime  double kF (DO NOT USE)
-    XT = 98  #
-    XD = 99  #
+    XT = 98  # table
+    XD = 99  # dict
+    SD = 127 # sorted dict
+    KRR = -128 # error
 
+class KContext:
+    def __init__(self):
+        self.symbols: Dict[str,int] = {}
+        self.symbols_enc: Dict[int,bytes] = {}
+    def ss(self, s: str):
+        # we don't want any surprises trying to serialise non-ascii symbols later
+        # so force non-ascii characters out now
+        bs = bytes(s, 'ascii')
+        idx = self.symbols.setdefault(s, len(self.symbols))
+        # TODO this should be a list
+        self.symbols_enc[idx] = bs
+        return idx
+
+DEFAULT_CONTEXT = KContext()
 
 class KObj:
-    def __init__(self, t: int = 0):
+    def __init__(self, t: int = 0, context: KContext=DEFAULT_CONTEXT):
         self.t = t
-
+        self.context: KContext = context
     def _paysz(self):
         return 0
 
@@ -48,20 +64,51 @@ class KObj:
 
 
 class KObjAtom(KObj):
-    def __init__(self, t: int = 0):
-        super().__init__(t)
+    def __init__(self, t: int = 0, context: KContext=DEFAULT_CONTEXT):
+        super().__init__(t, context)
         self.data: bytes = b""
 
-    def j(self, i: int) -> Self:
+    def _tn(self) -> str:
+        return f"{TypeEnum(abs(self.t)).name} ({self.t})"
+
+    # atom setters
+    def i(self, i: int) -> Self:
+        if self.t not in [-TypeEnum.KI]:
+            raise ValueError(f"wrong type {self._tn()} for i()")
         self.data = struct.pack("i", i)
         return self
+
+    def j(self, j: int) -> Self:
+        if self.t not in [-TypeEnum.KJ]:
+            raise ValueError(f"wrong type {self._tn()} for j()")
+        self.data = struct.pack("q", j)
+        return self
+
+    def ss(self, s: str) -> Self:
+        if self.t not in [-TypeEnum.KS]:
+            raise ValueError(f"wrong type {self._tn()} for ss()")
+        self.data = struct.pack("i", self.context.ss(s))
+        return self
+
+    # atom getters
+    def kH(self) -> int:
+        if self.t not in [-TypeEnum.KH]:
+            raise ValueError(f"wrong type {self.t} for kH")
+        return struct.unpack("h", self.data)[0]
 
     def kI(self) -> int:
         if self.t not in [-TypeEnum.KI]:
             raise ValueError(f"wrong type {self.t} for kI")
         return struct.unpack("i", self.data)[0]
 
+    def kJ(self) -> int:
+        if self.t not in [-TypeEnum.KJ]:
+            raise ValueError(f"wrong type {self.t} for kJ")
+        return struct.unpack("q", self.data)[0]
+
     def _databytes(self):
+        if self.t == -TypeEnum.KS:
+            return self.context.symbols_enc[struct.unpack("i", self.data)[0]] + b'\x00'
         return self.data
 
     def _paysz(self):
@@ -94,19 +141,46 @@ class KByteArray(KObj):
         return struct.pack("<BI", self.attrib, len(self.g)) + struct.pack(f"<{len(self.g)}B", *self.g)
 
 
+class KListArray(KObj):
+    def __init__(self):
+        super().__init__(0)
+        self.k = []
+        self.attrib = 0
+
+    def _paysz(self):
+        # sum sizes nested ks
+        return 1 + 4 + 1*len(self.k) + sum([ko._paysz() for ko in self.k])
+
+    def _databytes(self):
+        parts = [struct.pack("<BI", self.attrib, len(self.k))]
+        for ko in self.k:
+            parts.extend([struct.pack(f"<B", ko.t), ko._databytes()])
+        return b"".join(parts)
+
 def b9(k: KObj, msgtype=0, flags=0) -> bytes:
     # 8 byte header
     msglen = 8 + 1 + k._paysz()
     return struct.pack("<BBHIb", 1, msgtype, flags, msglen, k.t) + k._databytes()
 
 
+# atom constructors
 def ki(i: int) -> KObj:
-    return KObjAtom(-6).j(i)
+    return KObjAtom(-TypeEnum.KI).i(i)
+
+def kj(i: int) -> KObj:
+    return KObjAtom(-TypeEnum.KJ).j(i)
+
+def ks(s: str) -> KObj:
+    return KObjAtom(-TypeEnum.KS).ss(s)
 
 
+# vector constructors
 def ktn(t: int, sz: int = 0) -> KObj:
     if t == TypeEnum.KI:
         return KIntArray(sz, t)
     if t == TypeEnum.KG:
         return KByteArray(sz, t)
+    if t == 0:
+        return KListArray()
     raise NotImplementedException(f"ktn for type {t}")
+
