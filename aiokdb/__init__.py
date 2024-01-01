@@ -15,10 +15,16 @@ class NotImplementedException(Exception):
     pass
 
 
+class AttrEnum(enum.IntEnum):
+    NONE = 0
+    SORTED = 1
+
+
 class TypeEnum(enum.IntEnum):
     #    type bytes qtype     ctype  accessor
+    K = 0  #   *    K         K
     KB = 1  #  1    boolean   char   kG
-    UU = 2  #  16   guid     U       kU
+    UU = 2  #  16   guid      U      kU
     KG = 4  #  1    byte      char   kG
     KH = 5  #  2    short     short  kH
     KI = 6  #  4    int       int    kI
@@ -49,7 +55,7 @@ class KContext:
     def ss(self, s: str):
         # we don't want any surprises trying to serialise non-ascii symbols later
         # so force non-ascii characters out now
-        bs = bytes(s, "ascii") + b'\x00'
+        bs = bytes(s, "ascii") + b"\x00"
         idx = self.symbols.setdefault(s, len(self.symbols))
         # TODO this should be a list
         self.symbols_enc[idx] = (s, bs)
@@ -64,8 +70,9 @@ def tn(t: int) -> str:
 
 
 class KObj:
-    def __init__(self, t: int = 0, context: KContext = DEFAULT_CONTEXT):
+    def __init__(self, t: int = 0, context: KContext = DEFAULT_CONTEXT, attr: int = 0):
         self.t = t
+        self.attrib = attr
         self.context: KContext = context
 
     def _paysz(self):
@@ -156,10 +163,9 @@ class KObjAtom(KObj):
 
 
 class KIntArray(KObj):
-    def __init__(self, sz: int, t: int = TypeEnum.KI):
-        super().__init__(t)
+    def __init__(self, sz: int, t: int = TypeEnum.KI, attr: int = 0):
+        super().__init__(t, attr=attr)
         self.j = array.array("l", [0] * sz)
-        self.attrib = 0
 
     def _paysz(self):
         return 2 + 4 + 4 * len(self.j)
@@ -185,7 +191,7 @@ class KIntSymArray(KIntArray):
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self.j))]
         for j in self.j:
             parts.append(self.context.symbols_enc[j][1])
-        return b''.join(parts)
+        return b"".join(parts)
 
     def kS(self) -> Sequence[str]:
         # Warning: accessor read-only
@@ -202,10 +208,9 @@ class KIntSymArray(KIntArray):
 
 
 class KByteArray(KObj):
-    def __init__(self, sz: int, t: int = TypeEnum.KB):
-        super().__init__(t)
+    def __init__(self, sz: int, t: int = TypeEnum.KB, attr: int = 0):
+        super().__init__(t, attr=attr)
         self.g = array.array("b", [0] * sz)
-        self.attrib = 0
 
     def _paysz(self):
         return 2 + 4 + 1 * len(self.g)
@@ -215,12 +220,14 @@ class KByteArray(KObj):
             f"<{len(self.g)}B", *self.g
         )
 
+    def kB(self) -> MutableSequence[int]:
+        return self.g
+
 
 class KLongArray(KObj):
-    def __init__(self, sz: int, t: int = TypeEnum.KJ):
-        super().__init__(t)
+    def __init__(self, sz: int, t: int = TypeEnum.KJ, attr: int = 0):
+        super().__init__(t, attr=attr)
         self.j = array.array("q", [0] * sz)
-        self.attrib = 0
 
     def _paysz(self):
         return 2 + 4 + 8 * len(self.j)
@@ -238,7 +245,6 @@ class KListArray(KObj):
     def __init__(self):
         super().__init__(0)
         self.k = []
-        self.attrib = 0
 
     def _paysz(self):
         # sum sizes nested ks
@@ -270,15 +276,19 @@ def ks(s: str) -> KObj:
 
 
 # vector constructors
-def ktn(t: int, sz: int = 0) -> KObj:
+def ktn(t: int, sz: int = 0, sorted: bool = False) -> KObj:
+    attr = AttrEnum.NONE
+    if sorted:
+        attr = AttrEnum.SORTED
+
     if t == TypeEnum.KI:
-        return KIntArray(sz, t)
+        return KIntArray(sz, t, attr)
     if t == TypeEnum.KG:
-        return KByteArray(sz, t)
+        return KByteArray(sz, t, attr)
     if t == TypeEnum.KJ:
-        return KLongArray(sz, t)
+        return KLongArray(sz, t, attr)
     if t == TypeEnum.KS:
-        return KIntSymArray(sz, t)
+        return KIntSymArray(sz, t, attr)
     if t == 0:
         return KListArray()
 
@@ -286,8 +296,10 @@ def ktn(t: int, sz: int = 0) -> KObj:
 
 
 class KDict(KObj):
-    def __init__(self, kkeys: KObj, kvalues: KObj):
-        super().__init__(TypeEnum.XD)
+    def __init__(self, kkeys: KObj, kvalues: KObj, t: TypeEnum = TypeEnum.XD):
+        super().__init__(t)
+        if t == TypeEnum.SD and kkeys.attrib == 0:
+            raise ValueError(f"Keys not sorted for SD {kkeys._tn()}")
         self.kkeys = kkeys
         self.kvalues = kvalues
 
@@ -303,4 +315,6 @@ class KDict(KObj):
 
 
 def xd(kkeys: KObj, kvalues: KObj, sorted=False) -> KObj:
+    if sorted:
+        return KDict(kkeys, kvalues, TypeEnum.SD)
     return KDict(kkeys, kvalues)

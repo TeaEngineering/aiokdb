@@ -24,18 +24,22 @@ result = h.k("2.0+3.0", None) # None can be used where C expects (K)0
 assert result.f() == 5.0
 ````
 
-The `result` object is a K-like Python object, having the usual signed integer type available as `result.type`. Accessors for the primitive types are provided and check at runtime that the accessor is appropriate for the stored type. We don't have the benefit of a Union so this is quite inefficient for lots of singltons.
+The `result` object is a K-like Python object (a `KObj`), having the usual signed integer type available as `result.type`. Accessors for the primitive types are prefixed with an `a` and check at runtime that the accessor is appropriate for the stored type (`.aI()`, `.aJ()`, `.aH()` etc.). Atoms store their value to a `bytes` object irrespective of the type, and encode/decode on demand. Atomic values can be set with (`.i(3)`, `.j(12)`, `.ss("hello")`).
 
-Arrays are implemtned with subtypes that use [Python's native arrays module](https://docs.python.org/3/library/array.html) for efficient array types.
+Arrays are implemented with subtypes that use [Python's native arrays module](https://docs.python.org/3/library/array.html) for efficient array types. The `MutableSequence` arrays are returned using the usual array accessor functions `kI`, `kB`, `kS` etc.
 
 Serialisation is handled by `b9` which returns a python bytes, and `d9` which takes a bytes and returns a K-object.
 
-Python manages garbage colleciton of our K-like objects, so none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` have no equivelent.
+* Atoms are created by `ka`, `kb`, `ku`, `kg`, `kh`, `ki`, `kj`, `ke`, `kf`, `kc`, `ks`, `kt`, `kd`, `kz`, `ktj`
+* Lists with `ktn` and `knk`
+* Dictionaries with `xd` and tables with `xt`.
 
-Atoms are created by `ka`, `kb`, `ku`, `kg`, `kh`, `ki`, `kj`, `ke`, `kf`, `kc`, `ks`, `kt`, `kd`, `kz`, `ktj`
-Lists with `ktn` and `knk`
+Python manages garbage colleciton of our objects, so none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` have no equivelent.
 
 ## Tests
 
 Just run `pytest` in the root directory.
+Formatting with `black .`
+Check for type annotations with
+
 
