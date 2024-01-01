@@ -1,14 +1,16 @@
-import struct
-from typing import Self
-from collections.abc import MutableSequence, Sequence
-import enum
 import array
+import enum
+import struct
+from collections.abc import MutableSequence, Sequence
+from typing import Self, cast
 
 __all__ = [
     "b9",
     "d9",
     "ktn",
 ]
+
+# mypy: disallow-untyped-defs
 
 
 class NotImplementedException(Exception):
@@ -52,7 +54,7 @@ class KContext:
         self.symbols: dict[str, int] = {}
         self.symbols_enc: dict[int, tuple[str, bytes]] = {}
 
-    def ss(self, s: str):
+    def ss(self, s: str) -> int:
         # we don't want any surprises trying to serialise non-ascii symbols later
         # so force non-ascii characters out now
         bs = bytes(s, "ascii") + b"\x00"
@@ -70,12 +72,14 @@ def tn(t: int) -> str:
 
 
 class KObj:
-    def __init__(self, t: int = 0, context: KContext = DEFAULT_CONTEXT, attr: int = 0):
+    def __init__(
+        self, t: int = 0, context: KContext = DEFAULT_CONTEXT, attr: int = 0
+    ) -> None:
         self.t = t
         self.attrib = attr
         self.context: KContext = context
 
-    def _paysz(self):
+    def _paysz(self) -> int:
         return 1
 
     def _databytes(self) -> bytes:
@@ -86,27 +90,44 @@ class KObj:
 
     # atom getters
     def aI(self) -> int:
-        raise NotImplementedException
+        raise NotImplementedException()
 
     def aH(self) -> int:
-        raise NotImplementedException
+        raise NotImplementedException()
 
     def aJ(self) -> int:
-        raise NotImplementedException
+        raise NotImplementedException()
 
     def aS(self) -> str:
-        raise NotImplementedException
+        raise NotImplementedException()
 
     # vector getters
+    def kK(self) -> MutableSequence["KObj"]:
+        raise NotImplementedException()
+
+    def kB(self) -> MutableSequence[int]:
+        raise NotImplementedException()
+
+    def kH(self) -> MutableSequence[int]:
+        raise NotImplementedException()
+
     def kI(self) -> MutableSequence[int]:
-        raise NotImplementedException
+        raise NotImplementedException()
+
+    def kJ(self) -> MutableSequence[int]:
+        raise NotImplementedException()
 
     def kS(self) -> Sequence[str]:
-        raise NotImplementedException
+        raise NotImplementedException()
+
+    # TODO: clean this up by having kS() return a MutableSequence(str) that
+    # writes through to the int array
+    def appendS(self, *ss: str) -> None:
+        raise NotImplementedException()
 
 
 class KObjAtom(KObj):
-    def __init__(self, t: int = 0, context: KContext = DEFAULT_CONTEXT):
+    def __init__(self, t: int = 0, context: KContext = DEFAULT_CONTEXT) -> None:
         super().__init__(t, context)
         self.data: bytes = b""
 
@@ -133,89 +154,44 @@ class KObjAtom(KObj):
     def aH(self) -> int:
         if self.t not in [-TypeEnum.KH]:
             raise ValueError(f"wrong type {self.t} for kH")
-        return struct.unpack("h", self.data)[0]
+        return cast(int, struct.unpack("h", self.data)[0])
 
     def aI(self) -> int:
         if self.t not in [-TypeEnum.KI, -TypeEnum.KS]:
             raise ValueError(f"wrong type {self.t} for kI")
-        return struct.unpack("i", self.data)[0]
+        return cast(int, struct.unpack("i", self.data)[0])
 
     def aJ(self) -> int:
         if self.t not in [-TypeEnum.KJ]:
             raise ValueError(f"wrong type {self.t} for kJ")
-        return struct.unpack("q", self.data)[0]
+        return cast(int, struct.unpack("q", self.data)[0])
 
     def aS(self) -> str:
         return self.context.symbols_enc[self.aI()][0]
 
-    def _databytes(self):
+    def _databytes(self) -> bytes:
         bs = self.data
         if self.t == -TypeEnum.KS:
             bs = self.context.symbols_enc[self.aI()][1]
 
         return super()._databytes() + bs
 
-    def _paysz(self):
+    def _paysz(self) -> int:
         sz = len(self.data)
         if self.t == -TypeEnum.KS:
             sz = len(self.context.symbols_enc[self.aI()][1])
-        return super()._paysz() + len(self.data)
-
-
-class KIntArray(KObj):
-    def __init__(self, sz: int, t: int = TypeEnum.KI, attr: int = 0):
-        super().__init__(t, attr=attr)
-        self.j = array.array("l", [0] * sz)
-
-    def _paysz(self):
-        return 2 + 4 + 4 * len(self.j)
-
-    def _databytes(self):
-        if self.j.itemsize == 4:  # array type 'l' seems to store as 8 bytes
-            pi = self.j.tobytes()
-        else:
-            pi = struct.pack(f"<{len(self.j)}I", *self.j)
-        return struct.pack("<bBI", self.t, self.attrib, len(self.j)) + pi
-
-    def kI(self) -> MutableSequence[int]:
-        return self.j
-
-
-class KIntSymArray(KIntArray):
-    # store symbol indexes in KIntArray
-    # hook serialise to use null byte terminated representation
-    def _paysz(self):
-        return 2 + 4 + sum([len(self.context.symbols_enc[j][1]) for j in self.j])
-
-    def _databytes(self):
-        parts = [struct.pack("<bBI", self.t, self.attrib, len(self.j))]
-        for j in self.j:
-            parts.append(self.context.symbols_enc[j][1])
-        return b"".join(parts)
-
-    def kS(self) -> Sequence[str]:
-        # Warning: accessor read-only
-        s = []
-        for j in self.j:
-            s.append(self.context.symbols_enc[j][0])
-        return s
-
-    def appendS(self, *ss: str) -> Self:
-        for s in ss:
-            j = self.context.ss(s)
-            self.j.append(j)
-        return self
+        return super()._paysz() + sz
 
 
 class KByteArray(KObj):
-    def __init__(self, sz: int, t: int = TypeEnum.KB, attr: int = 0):
+    def __init__(self, sz: int, t: int = TypeEnum.KB, attr: int = 0) -> None:
         super().__init__(t, attr=attr)
         self.g = array.array("b", [0] * sz)
 
-    def _paysz(self):
+    def _paysz(self) -> int:
         return 2 + 4 + 1 * len(self.g)
 
-    def _databytes(self):
+    def _databytes(self) -> bytes:
         return struct.pack("<bBI", self.t, self.attrib, len(self.g)) + struct.pack(
             f"<{len(self.g)}B", *self.g
         )
@@ -224,39 +200,104 @@ class KByteArray(KObj):
         return self.g
 
 
+class KShortArray(KObj):
+    def __init__(self, sz: int, t: int = TypeEnum.KH, attr: int = 0) -> None:
+        super().__init__(t, attr=attr)
+        self.h = array.array("h", [0] * sz)
+
+    def _paysz(self) -> int:
+        return 2 + 4 + 2 * len(self.h)
+
+    def _databytes(self) -> bytes:
+        return struct.pack("<bBI", self.t, self.attrib, len(self.h)) + struct.pack(
+            f"<{len(self.h)}H", *self.h
+        )
+
+    def kH(self) -> MutableSequence[int]:
+        return self.h
+
+
+class KIntArray(KObj):
+    def __init__(self, sz: int, t: int = TypeEnum.KI, attr: int = 0) -> None:
+        super().__init__(t, attr=attr)
+        self.i = array.array("l", [0] * sz)
+
+    def _paysz(self) -> int:
+        return 2 + 4 + 4 * len(self.i)
+
+    def _databytes(self) -> bytes:
+        if self.i.itemsize == 4:  # array type 'l' seems to store as 8 bytes
+            pi = self.i.tobytes()
+        else:
+            pi = struct.pack(f"<{len(self.i)}I", *self.i)
+        return struct.pack("<bBI", self.t, self.attrib, len(self.i)) + pi
+
+    def kI(self) -> MutableSequence[int]:
+        return self.i
+
+
+class KIntSymArray(KIntArray):
+    # store symbol indexes in KIntArray
+    # hook serialise to use null byte terminated representation
+    def _paysz(self) -> int:
+        return 2 + 4 + sum([len(self.context.symbols_enc[j][1]) for j in self.i])
+
+    def _databytes(self) -> bytes:
+        parts = [struct.pack("<bBI", self.t, self.attrib, len(self.i))]
+        for j in self.i:
+            parts.append(self.context.symbols_enc[j][1])
+        return b"".join(parts)
+
+    def kS(self) -> Sequence[str]:
+        # Warning: accessor read-only
+        s = []
+        for j in self.i:
+            s.append(self.context.symbols_enc[j][0])
+        return s
+
+    def appendS(self, *ss: str) -> Self:
+        for s in ss:
+            j = self.context.ss(s)
+            self.i.append(j)
+        return self
+
+
 class KLongArray(KObj):
-    def __init__(self, sz: int, t: int = TypeEnum.KJ, attr: int = 0):
+    def __init__(self, sz: int, t: int = TypeEnum.KJ, attr: int = 0) -> None:
         super().__init__(t, attr=attr)
         self.j = array.array("q", [0] * sz)
 
-    def _paysz(self):
+    def _paysz(self) -> int:
         return 2 + 4 + 8 * len(self.j)
 
-    def _databytes(self):
+    def _databytes(self) -> bytes:
         return struct.pack("<bBI", self.t, self.attrib, len(self.j)) + struct.pack(
             f"<{len(self.j)}q", *self.j
         )
 
-    def kI(self) -> MutableSequence[int]:
+    def kJ(self) -> MutableSequence[int]:
         return self.j
 
 
-class KListArray(KObj):
-    def __init__(self):
+class KObjArray(KObj):
+    def __init__(self) -> None:
         super().__init__(0)
-        self.k = []
+        self.k: list[KObj] = []
 
-    def _paysz(self):
+    def _paysz(self) -> int:
         # sum sizes nested ks
         return 2 + 4 + sum([ko._paysz() for ko in self.k])
 
-    def _databytes(self):
+    def _databytes(self) -> bytes:
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self.k))]
         parts.extend(ko._databytes() for ko in self.k)
         return b"".join(parts)
 
+    def kK(self) -> MutableSequence[KObj]:
+        return self.k
 
-def b9(k: KObj, msgtype=0, flags=0) -> bytes:
+
+def b9(k: KObj, msgtype: int = 0, flags: int = 0) -> bytes:
     # 8 byte header
     msglen = 8 + k._paysz()
     return struct.pack("<BBHI", 1, msgtype, flags, msglen) + k._databytes()
@@ -281,16 +322,18 @@ def ktn(t: int, sz: int = 0, sorted: bool = False) -> KObj:
     if sorted:
         attr = AttrEnum.SORTED
 
-    if t == TypeEnum.KI:
-        return KIntArray(sz, t, attr)
     if t == TypeEnum.KG:
         return KByteArray(sz, t, attr)
+    if t == TypeEnum.KH:
+        return KShortArray(sz, t, attr)
+    if t == TypeEnum.KI:
+        return KIntArray(sz, t, attr)
     if t == TypeEnum.KJ:
         return KLongArray(sz, t, attr)
     if t == TypeEnum.KS:
         return KIntSymArray(sz, t, attr)
     if t == 0:
-        return KListArray()
+        return KObjArray()
 
     raise NotImplementedException(f"ktn for type {tn(t)}")
 
@@ -303,10 +346,10 @@ class KDict(KObj):
         self.kkeys = kkeys
         self.kvalues = kvalues
 
-    def _paysz(self):
+    def _paysz(self) -> int:
         return 1 + self.kkeys._paysz() + self.kvalues._paysz()
 
-    def _databytes(self):
+    def _databytes(self) -> bytes:
         return (
             struct.pack("<B", self.t)
             + self.kkeys._databytes()
@@ -314,7 +357,7 @@ class KDict(KObj):
         )
 
 
-def xd(kkeys: KObj, kvalues: KObj, sorted=False) -> KObj:
+def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
     if sorted:
         return KDict(kkeys, kvalues, TypeEnum.SD)
     return KDict(kkeys, kvalues)
