@@ -17,9 +17,11 @@ class NotImplementedException(Exception):
     pass
 
 
+# suspect this is a bitfield?
 class AttrEnum(enum.IntEnum):
     NONE = 0
     SORTED = 1
+    PARTED = 3
 
 
 class TypeEnum(enum.IntEnum):
@@ -122,7 +124,7 @@ class KObj:
 
     # TODO: clean this up by having kS() return a MutableSequence(str) that
     # writes through to the int array
-    def appendS(self, *ss: str) -> None:
+    def appendS(self, *ss: str) -> Self:
         raise NotImplementedException()
 
 
@@ -357,7 +359,29 @@ class KDict(KObj):
         )
 
 
+class KFlip(KObj):
+    def __init__(self, kd: KDict, sorted: bool = False):
+        attr = AttrEnum.NONE
+        if sorted:
+            attr = AttrEnum.SORTED
+            assert kd.t == TypeEnum.XD
+            # unsure of logic here, but it matches example
+            kd.kvalues.kK()[0].attrib = AttrEnum.PARTED
+        super().__init__(TypeEnum.XT, attr=attr)
+        self.kd = kd
+
+    def _paysz(self) -> int:
+        return 2 + self.kd._paysz()
+
+    def _databytes(self) -> bytes:
+        return struct.pack("<bB", self.t, self.attrib) + self.kd._databytes()
+
+
 def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
     if sorted:
         return KDict(kkeys, kvalues, TypeEnum.SD)
     return KDict(kkeys, kvalues)
+
+
+def xt(kd: KDict, sorted: bool = False) -> KFlip:
+    return KFlip(kd, sorted=sorted)

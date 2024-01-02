@@ -38,8 +38,8 @@ Python manages garbage colleciton of our objects, so none of the refcounting pri
 
 ## Tests
 
-Just run `pytest` in the root directory.
+Run `pytest` in the root directory.
 Formatting with `black .`
-Check for type annotations with
+Check type annotations with `mypy --strict .`
 
 

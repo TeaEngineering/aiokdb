@@ -1,6 +1,6 @@
 import pytest
 
-from aiokdb import KContext, TypeEnum, b9, ki, kj, ks, ktn, xd
+from aiokdb import KContext, TypeEnum, b9, ki, kj, ks, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -93,19 +93,17 @@ def test_serialization_examples() -> None:
     # sorted/stepped dictionary with atom values (encoding of flags field)
     # has both sorted dict (7f) and s-meta on keys vector (01)
     # q)-8!`s#`a`b!2 3i
-    ks = ktn(TypeEnum.KS, sorted=True)
-    ks.appendS("a", "b")  # uses an assumed global context for enumeration
+    ksorted = ktn(TypeEnum.KS, sorted=True)
+    ksorted.appendS("a", "b")
     kv = ktn(TypeEnum.KI)
     kv.kI().extend([2, 3])
-    k = xd(ks, kv, sorted=True)
+    k = xd(ksorted, kv, sorted=True)
     assert b9(k) == h2b(
         "0x01000000210000007f0b0102000000610062000600020000000200000003000000"
     )
 
     # dictionary with vector values
-    # q)-8!`a`b!enlist each 2 3
-    ks = ktn(TypeEnum.KS)
-    ks.appendS("a", "b")  # uses an assumed global context for enumeration
+    # q)-8!`a`b!enlist each 2 3i
     kv = ktn(TypeEnum.K)
     kv.kK().append(ktn(TypeEnum.KI))
     kv.kK().append(ktn(TypeEnum.KI))
@@ -114,4 +112,20 @@ def test_serialization_examples() -> None:
     k = xd(ks, kv)
     assert b9(k) == h2b(
         "0x010000002d000000630b0002000000610062000000020000000600010000000200000006000100000003000000"
+    )
+
+    # table
+    # q)-8!([]a:enlist 2i;b:enlist 3i)
+    # q)flip `a`b!enlist each 2 3i
+    t = xt(k)
+    assert b9(t) == h2b(
+        "0x010000002f0000006200630b0002000000610062000000020000000600010000000200000006000100000003000000"
+    )
+
+    # sorted table
+    # q)-8!`s#([]a:enlist 2i;b:enlist 3i)
+    # in KDB this magically sets the parted bit on the first column (?!)
+    t = xt(k, sorted=True)
+    assert b9(t) == h2b(
+        "0x010000002f0000006201630b0002000000610062000000020000000603010000000200000006000100000003000000"
     )
