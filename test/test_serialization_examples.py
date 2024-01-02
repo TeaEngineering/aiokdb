@@ -1,6 +1,4 @@
-import pytest
-
-from aiokdb import AttrEnum, KContext, TypeEnum, b9, ki, kj, ks, ktn, xd, xt
+from aiokdb import AttrEnum, TypeEnum, b9, ki, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -34,7 +32,7 @@ def test_serialization_examples() -> None:
 
     # general list
     # q)-8!enlist`byte$til 5
-    k2 = ktn(0)
+    k2 = ktn(TypeEnum.K)
     k2.kK().append(k)
     assert b9(k2) == h2b("0x01000000190000000000010000000400050000000001020304")
 
@@ -61,7 +59,7 @@ def test_serialization_examples() -> None:
     # sorted/stepped dictionary with atom values (encoding of flags field)
     # has both sorted dict (7f) and s-meta on keys vector (01)
     # q)-8!`s#`a`b!2 3i
-    ksorted = ktn(TypeEnum.KS, sorted=True)
+    ksorted = ktn(TypeEnum.KS, attr=AttrEnum.SORTED)
     ksorted.appendS("a", "b")
     kv = ktn(TypeEnum.KI)
     kv.kI().extend([2, 3])

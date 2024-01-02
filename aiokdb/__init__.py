@@ -52,6 +52,28 @@ class TypeEnum(enum.IntEnum):
     KRR = -128  # error
 
 
+# Remember to special case TypeEnum.KS and TypeEnum.K
+ATOM_LENGTH: dict[int, int] = {
+    TypeEnum.KB: 1,
+    TypeEnum.UU: 16,
+    TypeEnum.KG: 1,
+    TypeEnum.KH: 2,
+    TypeEnum.KI: 4,
+    TypeEnum.KJ: 8,
+    TypeEnum.KE: 4,
+    TypeEnum.KF: 8,
+    TypeEnum.KC: 1,
+    TypeEnum.KP: 8,
+    TypeEnum.KM: 4,
+    TypeEnum.KD: 4,
+    TypeEnum.KN: 8,
+    TypeEnum.KU: 4,
+    TypeEnum.KV: 4,
+    TypeEnum.KT: 4,
+    TypeEnum.KZ: 8,
+}
+
+
 class KContext:
     def __init__(self) -> None:
         self.symbols: dict[str, int] = {}
@@ -91,6 +113,9 @@ class KObj:
     def _tn(self) -> str:
         return tn(self.t)
 
+    def __len__(self) -> int:
+        return 0
+
     # atom getters
     def aI(self) -> int:
         raise NotImplementedException()
@@ -128,6 +153,10 @@ class KObj:
     def appendS(self, *ss: str) -> Self:
         raise NotImplementedException()
 
+    # deserialise content from stream
+    def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
+        raise NotImplementedException()
+
 
 class KObjAtom(KObj):
     def __init__(self, t: int = 0, context: KContext = DEFAULT_CONTEXT) -> None:
@@ -156,22 +185,23 @@ class KObjAtom(KObj):
     # atom getters
     def aH(self) -> int:
         if self.t not in [-TypeEnum.KH]:
-            raise ValueError(f"wrong type {self._tn()} for kH")
+            raise ValueError(f"wrong type {self._tn()} for aH")
         return cast(int, struct.unpack("h", self.data)[0])
 
     def aI(self) -> int:
         if self.t not in [-TypeEnum.KI, -TypeEnum.KS]:
-            raise ValueError(f"wrong type {self._tn()} for kI")
+            raise ValueError(f"wrong type {self._tn()} for aI")
         return cast(int, struct.unpack("i", self.data)[0])
 
     def aJ(self) -> int:
         if self.t not in [-TypeEnum.KJ]:
-            raise ValueError(f"wrong type {self._tn()} for kJ")
+            raise ValueError(f"wrong type {self._tn()} for aJ")
         return cast(int, struct.unpack("q", self.data)[0])
 
     def aS(self) -> str:
         return self.context.symbols_enc[self.aI()][0]
 
+    # serialisation
     def _databytes(self) -> bytes:
         bs = self.data
         if self.t == -TypeEnum.KS:
@@ -184,6 +214,12 @@ class KObjAtom(KObj):
         if self.t == -TypeEnum.KS:
             sz = len(self.context.symbols_enc[self.aI()][1])
         return super()._paysz() + sz
+
+    def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
+        bs = ATOM_LENGTH[-self.t]
+        offset += 1
+        self.data = data[offset : offset + bs]
+        return self, offset + bs
 
 
 class KByteArray(KObj):
@@ -202,6 +238,9 @@ class KByteArray(KObj):
     def kB(self) -> MutableSequence[int]:
         return self.g
 
+    def __len__(self) -> int:
+        return len(self.g)
+
 
 class KShortArray(KObj):
     def __init__(self, sz: int, t: int = TypeEnum.KH, attr: int = 0) -> None:
@@ -218,6 +257,9 @@ class KShortArray(KObj):
 
     def kH(self) -> MutableSequence[int]:
         return self.h
+
+    def __len__(self) -> int:
+        return len(self.h)
 
 
 class KIntArray(KObj):
@@ -237,6 +279,9 @@ class KIntArray(KObj):
 
     def kI(self) -> MutableSequence[int]:
         return self.i
+
+    def __len__(self) -> int:
+        return len(self.i)
 
 
 class KIntSymArray(KIntArray):
@@ -264,6 +309,9 @@ class KIntSymArray(KIntArray):
             self.i.append(j)
         return self
 
+    def __len__(self) -> int:
+        return len(self.i)
+
 
 class KLongArray(KObj):
     def __init__(self, sz: int, t: int = TypeEnum.KJ, attr: int = 0) -> None:
@@ -280,6 +328,9 @@ class KLongArray(KObj):
 
     def kJ(self) -> MutableSequence[int]:
         return self.j
+
+    def __len__(self) -> int:
+        return len(self.j)
 
 
 class KObjArray(KObj):
@@ -299,11 +350,41 @@ class KObjArray(KObj):
     def kK(self) -> MutableSequence[KObj]:
         return self.k
 
+    def __len__(self) -> int:
+        return len(self.k)
+
 
 def b9(k: KObj, msgtype: int = 0, flags: int = 0) -> bytes:
     # 8 byte header
     msglen = 8 + k._paysz()
     return struct.pack("<BBHI", 1, msgtype, flags, msglen) + k._databytes()
+
+
+def d9(data: bytes) -> KObj:
+    # raises struct.error on underflow
+    ver, msgtype, flags, msglen = struct.unpack_from("<BBHI", data, offset=0)
+    if len(data) < msglen:
+        raise ValueError(
+            f"buffer is too short, required {msglen} bytes, got {len(data)}"
+        )
+    k, pos = _d9_unpackfrom(data, offset=8)
+    if pos != msglen:
+        raise Exception(f"Final position at {pos} expected {msglen}")
+    return k
+
+
+def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
+    (t,) = struct.unpack_from("<b", data, offset=offset)
+    if t < 0:
+        ka = KObjAtom(t)
+        return ka.frombytes(data, offset)
+    elif t >= 0 and t <= 15:
+        # ranged vector types
+        t, attrib, sz = struct.unpack_from("<bBI", data, offset=offset)
+        k = ktn(t, sz, attrib)
+        return k.frombytes(data, offset)
+
+    raise NotImplementedException(f"Unable to d9 unpack t={t}")
 
 
 # atom constructors
@@ -320,11 +401,7 @@ def ks(s: str) -> KObj:
 
 
 # vector constructors
-def ktn(t: int, sz: int = 0, sorted: bool = False) -> KObj:
-    attr = AttrEnum.NONE
-    if sorted:
-        attr = AttrEnum.SORTED
-
+def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
     if t == TypeEnum.KG:
         return KByteArray(sz, t, attr)
     if t == TypeEnum.KH:
@@ -335,7 +412,7 @@ def ktn(t: int, sz: int = 0, sorted: bool = False) -> KObj:
         return KLongArray(sz, t, attr)
     if t == TypeEnum.KS:
         return KIntSymArray(sz, t, attr)
-    if t == 0:
+    if t == TypeEnum.K:
         return KObjArray()
 
     raise NotImplementedException(f"ktn for type {tn(t)}")
@@ -358,6 +435,9 @@ class KDict(KObj):
             + self.kkeys._databytes()
             + self.kvalues._databytes()
         )
+
+    def __len__(self) -> int:
+        return len(self.kkeys)
 
 
 class KFlip(KObj):
