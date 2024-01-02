@@ -17,11 +17,12 @@ class NotImplementedException(Exception):
     pass
 
 
-# suspect this is a bitfield?
 class AttrEnum(enum.IntEnum):
     NONE = 0
     SORTED = 1
+    UNIQUE = 2
     PARTED = 3
+    GROUPED = 4
 
 
 class TypeEnum(enum.IntEnum):
@@ -155,17 +156,17 @@ class KObjAtom(KObj):
     # atom getters
     def aH(self) -> int:
         if self.t not in [-TypeEnum.KH]:
-            raise ValueError(f"wrong type {self.t} for kH")
+            raise ValueError(f"wrong type {self._tn()} for kH")
         return cast(int, struct.unpack("h", self.data)[0])
 
     def aI(self) -> int:
         if self.t not in [-TypeEnum.KI, -TypeEnum.KS]:
-            raise ValueError(f"wrong type {self.t} for kI")
+            raise ValueError(f"wrong type {self._tn()} for kI")
         return cast(int, struct.unpack("i", self.data)[0])
 
     def aJ(self) -> int:
         if self.t not in [-TypeEnum.KJ]:
-            raise ValueError(f"wrong type {self.t} for kJ")
+            raise ValueError(f"wrong type {self._tn()} for kJ")
         return cast(int, struct.unpack("q", self.data)[0])
 
     def aS(self) -> str:
@@ -343,7 +344,7 @@ def ktn(t: int, sz: int = 0, sorted: bool = False) -> KObj:
 class KDict(KObj):
     def __init__(self, kkeys: KObj, kvalues: KObj, t: TypeEnum = TypeEnum.XD):
         super().__init__(t)
-        if t == TypeEnum.SD and kkeys.attrib == 0:
+        if t == TypeEnum.SD and kkeys.t != TypeEnum.XT and kkeys.attrib == 0:
             raise ValueError(f"Keys not sorted for SD {kkeys._tn()}")
         self.kkeys = kkeys
         self.kvalues = kvalues
@@ -365,8 +366,6 @@ class KFlip(KObj):
         if sorted:
             attr = AttrEnum.SORTED
             assert kd.t == TypeEnum.XD
-            # unsure of logic here, but it matches example
-            kd.kvalues.kK()[0].attrib = AttrEnum.PARTED
         super().__init__(TypeEnum.XT, attr=attr)
         self.kd = kd
 
