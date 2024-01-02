@@ -1,6 +1,8 @@
 import array
 import enum
 import struct
+
+import uuid
 from collections.abc import MutableSequence, Sequence
 from typing import Self, cast
 
@@ -117,6 +119,12 @@ class KObj:
         return 0
 
     # atom getters
+    def aB(self) -> bool:
+        raise NotImplementedException()
+
+    def aG(self) -> int:
+        raise NotImplementedException()
+
     def aI(self) -> int:
         raise NotImplementedException()
 
@@ -127,6 +135,18 @@ class KObj:
         raise NotImplementedException()
 
     def aS(self) -> str:
+        raise NotImplementedException()
+
+    def aU(self) -> uuid.UUID:
+        raise NotImplementedException()
+
+    def aE(self) -> float:
+        raise NotImplementedException()
+
+    def aF(self) -> float:
+        raise NotImplementedException()
+
+    def aC(self) -> str:
         raise NotImplementedException()
 
     # vector getters
@@ -183,6 +203,16 @@ class KObjAtom(KObj):
         return self
 
     # atom getters
+    def aB(self) -> bool:
+        if self.t not in [-TypeEnum.KB]:
+            raise ValueError(f"wrong type {self._tn()} for aB")
+        return self.aG() == 1
+
+    def aG(self) -> int:
+        if self.t not in [-TypeEnum.KG, -TypeEnum.KB]:
+            raise ValueError(f"wrong type {self._tn()} for aG")
+        return cast(int, struct.unpack("B", self.data)[0])
+
     def aH(self) -> int:
         if self.t not in [-TypeEnum.KH]:
             raise ValueError(f"wrong type {self._tn()} for aH")
@@ -201,6 +231,27 @@ class KObjAtom(KObj):
     def aS(self) -> str:
         return self.context.symbols_enc[self.aI()][0]
 
+    def aU(self) -> uuid.UUID:
+        if self.t not in [-TypeEnum.UU]:
+            raise ValueError(f"wrong type {self._tn()} for aU")
+        return uuid.UUID(bytes=self.data)
+
+    def aE(self) -> float:
+        if self.t not in [-TypeEnum.KE]:
+            raise ValueError(f"wrong type {self._tn()} for aE")
+        return cast(float, struct.unpack("f", self.data)[0])
+
+    def aF(self) -> float:
+        if self.t not in [-TypeEnum.KF]:
+            raise ValueError(f"wrong type {self._tn()} for aF")
+        return cast(float, struct.unpack("d", self.data)[0])
+
+    def aC(self) -> str:
+        if self.t not in [-TypeEnum.KC]:
+            raise ValueError(f"wrong type {self._tn()} for aC")
+        bs = struct.unpack("c", self.data)[0]
+        return cast(str, bs.decode("ascii"))
+
     # serialisation
     def _databytes(self) -> bytes:
         bs = self.data
@@ -216,9 +267,13 @@ class KObjAtom(KObj):
         return super()._paysz() + sz
 
     def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
-        bs = ATOM_LENGTH[-self.t]
         offset += 1
-        self.data = data[offset : offset + bs]
+        if self.t == -TypeEnum.KS:
+            bs = data[offset:].index(b"\x00") + 1
+            self.ss(data[offset : offset + bs - 1].decode("ascii"))
+        else:
+            bs = ATOM_LENGTH[-self.t]
+            self.data = data[offset : offset + bs]
         return self, offset + bs
 
 

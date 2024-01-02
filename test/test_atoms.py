@@ -1,4 +1,5 @@
 import struct
+import uuid
 
 import pytest
 
@@ -48,11 +49,45 @@ def test_atoms_b9() -> None:
 
 def test_atoms_d9() -> None:
     with pytest.raises(struct.error, match=r".*at least 8 bytes.*"):
-        k = d9(h2b("0x01"))
+        d9(h2b("0x01"))
+    with pytest.raises(ValueError, match=r".*required 13 bytes, got 12"):
+        d9(h2b("0x010000000d000000faffffff"))
 
-    k = d9(h2b("0x010000000d000000faffffffff"))
-    assert k.t == -TypeEnum.KI
-    assert k.aI() == -1
+    assert d9(h2b("0x010000000a000000ff00")).aB() is False  # -8!0b
+    assert d9(h2b("0x010000000a000000ff01")).aB() is True  # -8!1b
+    assert d9(h2b("0x010000000a000000fc02")).aG() == 2  # -8!0x2
+    assert d9(h2b("0x010000000a000000fcff")).aG() == 255  # -8!0xff
+    assert d9(h2b("0x010000000b000000fb0200")).aH() == 2
+    assert d9(h2b("0x010000000b000000fbffff")).aH() == -1
+    assert d9(h2b("0x010000000d000000fa02000000")).aI() == 2
+    assert d9(h2b("0x010000000d000000faffffffff")).aI() == -1
+    assert d9(h2b("0x0100000011000000f90200000000000000")).aJ() == 2
+    assert d9(h2b("0x0100000011000000f9ffffffffffffffff")).aJ() == -1
+    # -8!"G"$"97ebf398-b01a-0870-b5b7-8fc9e4edd95a"
+    assert d9(
+        h2b("0x0100000019000000fe97ebf398b01a0870b5b78fc9e4edd95a")
+    ).aU() == uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a")
+
+    # q real / python float
+    assert d9(h2b("0x010000000d000000f89a995940")).aE() == pytest.approx(
+        3.4, 0.0001
+    )  # -8!3.4e
+    assert d9(h2b("0x010000000d000000f89a9959c0")).aE() == pytest.approx(
+        -3.4, 0.0001
+    )  # -8!-3.4e
+    # q float / python double
+    assert d9(h2b("0x0100000011000000f73333333333330b40")).aF() == pytest.approx(
+        3.4, 0.0001
+    )
+    assert d9(h2b("0x0100000011000000f73333333333330bc0")).aF() == pytest.approx(
+        -3.4, 0.0001
+    )
+
+    assert d9(h2b("0x010000000a000000f643")).aC() == "C"  # -8!"C"
+    # single byte non-printable char
+    assert d9(h2b("0x010000000a000000f60f")).aC() == "\x0f"
+    # symbol -- null terminated parsing
+    assert d9(h2b("0x010000000d000000f561626300")).aS() == "abc"
 
 
 def test_vector_b9() -> None:
