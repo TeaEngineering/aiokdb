@@ -192,6 +192,12 @@ class KObjAtom(KObj):
         self.data = struct.pack("B", g)
         return self
 
+    def h(self, h: int) -> Self:
+        if self.t not in [-TypeEnum.KH]:
+            raise ValueError(f"wrong type {self._tn()} for h()")
+        self.data = struct.pack("h", h)
+        return self
+
     def i(self, i: int) -> Self:
         if self.t not in [-TypeEnum.KI]:
             raise ValueError(f"wrong type {self._tn()} for i()")
@@ -460,6 +466,10 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
 # atom constructors
 def kg(i: int) -> KObj:
     return KObjAtom(-TypeEnum.KG).g(i)
+
+
+def kh(i: int) -> KObj:
+    return KObjAtom(-TypeEnum.KH).h(i)
 
 
 def ki(i: int) -> KObj:

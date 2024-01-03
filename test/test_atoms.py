@@ -4,7 +4,7 @@ from array import array
 
 import pytest
 
-from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, kg, ki, kj, ks, ktn, xd, xt
+from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, kg, kh, ki, kj, ks, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -125,7 +125,7 @@ def test_overflows_KG() -> None:
     kg(0)
 
 
-def test_overflows_h() -> None:
+def test_overflows_KH() -> None:
     k = ktn(TypeEnum.KH, attr=AttrEnum.SORTED)
     with pytest.raises(
         OverflowError, match="signed short integer is greater than maximum"
@@ -137,6 +137,15 @@ def test_overflows_h() -> None:
         k.kH().append(-80912)
     k.kH().append(8)
     assert len(k.kH()) == 1
+
+    kh(0)
+    kh(32767)
+    kh(-32767)
+    kh(-32768)  # null
+    with pytest.raises(
+        struct.error, match=r"short format requires -32768 <= number <= 32767"
+    ):
+        kh(32768)
 
 
 def test_dict_checks() -> None:
