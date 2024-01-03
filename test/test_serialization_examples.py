@@ -27,7 +27,7 @@ def test_serialization_examples() -> None:
     # byte vector
     # q)-8!`byte$til 5
     k = ktn(TypeEnum.KG)
-    k.kB().extend(range(5))
+    k.kG().extend(range(5))
     assert b9(k) == h2b("0x01000000130000000400050000000001020304")
 
     # general list

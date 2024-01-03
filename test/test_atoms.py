@@ -1,9 +1,10 @@
 import struct
 import uuid
+from array import array
 
 import pytest
 
-from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, ki, kj, ks, ktn, xd, xt
+from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, kg, ki, kj, ks, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -96,12 +97,44 @@ def test_vector_b9() -> None:
     assert b9(k) == h2b("0x010000001200000005000200000003000200")
 
 
-def test_vector_overflows() -> None:
+def test_vector_d9() -> None:
+    # assert d9(h2b("0x010000001200000001000400000000010100")).kB() == [False, True, True, False]
+    assert d9(h2b("0x0100000011000000040003000000c0ffee")).kG() == array(
+        "B", [192, 255, 238]
+    )
+
+
+def test_overflows_KG() -> None:
+    k = ktn(TypeEnum.KG, attr=AttrEnum.SORTED)
+    with pytest.raises(
+        OverflowError, match="unsigned byte integer is greater than maximum"
+    ):
+        k.kG().append(256)
+    with pytest.raises(
+        OverflowError, match="unsigned byte integer is less than minimum"
+    ):
+        k.kG().append(-1)
+    k.kG().append(255)
+    assert len(k.kG()) == 1
+
+    with pytest.raises(struct.error, match=r".*ubyte.*"):
+        kg(-1)
+    with pytest.raises(struct.error, match=r".*ubyte.*"):
+        kg(256)
+    kg(255)
+    kg(0)
+
+
+def test_overflows_h() -> None:
     k = ktn(TypeEnum.KH, attr=AttrEnum.SORTED)
     with pytest.raises(
         OverflowError, match="signed short integer is greater than maximum"
     ):
-        k.kH().append(80909090)
+        k.kH().append(80909)
+    with pytest.raises(
+        OverflowError, match="signed short integer is less than minimum"
+    ):
+        k.kH().append(-80912)
     k.kH().append(8)
     assert len(k.kH()) == 1
 

@@ -1,7 +1,6 @@
 import array
 import enum
 import struct
-
 import uuid
 from collections.abc import MutableSequence, Sequence
 from typing import Self, cast
@@ -153,7 +152,10 @@ class KObj:
     def kK(self) -> MutableSequence["KObj"]:
         raise NotImplementedException()
 
-    def kB(self) -> MutableSequence[int]:
+    def kB(self) -> MutableSequence[bool]:
+        raise NotImplementedException()
+
+    def kG(self) -> MutableSequence[int]:
         raise NotImplementedException()
 
     def kH(self) -> MutableSequence[int]:
@@ -184,6 +186,12 @@ class KObjAtom(KObj):
         self.data: bytes = b""
 
     # atom setters
+    def g(self, g: int) -> Self:
+        if self.t not in [-TypeEnum.KG]:
+            raise ValueError(f"wrong type {self._tn()} for g()")
+        self.data = struct.pack("B", g)
+        return self
+
     def i(self, i: int) -> Self:
         if self.t not in [-TypeEnum.KI]:
             raise ValueError(f"wrong type {self._tn()} for i()")
@@ -257,13 +265,14 @@ class KObjAtom(KObj):
         bs = self.data
         if self.t == -TypeEnum.KS:
             bs = self.context.symbols_enc[self.aI()][1]
-
         return super()._databytes() + bs
 
     def _paysz(self) -> int:
-        sz = len(self.data)
         if self.t == -TypeEnum.KS:
             sz = len(self.context.symbols_enc[self.aI()][1])
+        else:
+            sz = ATOM_LENGTH[-self.t]
+            assert len(self.data) == sz
         return super()._paysz() + sz
 
     def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
@@ -280,7 +289,7 @@ class KObjAtom(KObj):
 class KByteArray(KObj):
     def __init__(self, sz: int, t: int = TypeEnum.KB, attr: int = 0) -> None:
         super().__init__(t, attr=attr)
-        self.g = array.array("b", [0] * sz)
+        self.g = array.array("B", [0] * sz)
 
     def _paysz(self) -> int:
         return 2 + 4 + 1 * len(self.g)
@@ -290,11 +299,17 @@ class KByteArray(KObj):
             f"<{len(self.g)}B", *self.g
         )
 
-    def kB(self) -> MutableSequence[int]:
+    def kG(self) -> MutableSequence[int]:
         return self.g
 
     def __len__(self) -> int:
         return len(self.g)
+
+    def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
+        # t, attrib, sz = struct.unpack_from("<bBI", data, offset=offset)
+        offset += 6
+        self.g = array.array("B", data[offset : offset + len(self)])
+        return self, offset + len(self)
 
 
 class KShortArray(KObj):
@@ -443,6 +458,10 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
 
 
 # atom constructors
+def kg(i: int) -> KObj:
+    return KObjAtom(-TypeEnum.KG).g(i)
+
+
 def ki(i: int) -> KObj:
     return KObjAtom(-TypeEnum.KI).i(i)
 
@@ -457,6 +476,8 @@ def ks(s: str) -> KObj:
 
 # vector constructors
 def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
+    if t == TypeEnum.KB:
+        return KByteArray(sz, t, attr)
     if t == TypeEnum.KG:
         return KByteArray(sz, t, attr)
     if t == TypeEnum.KH:
