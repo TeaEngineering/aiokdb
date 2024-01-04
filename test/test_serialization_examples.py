@@ -92,7 +92,7 @@ def test_serialization_examples() -> None:
     # q)-8!`s#([]a:enlist 2i;b:enlist 3i)
     # in KDB this magically sets the parted bit on the first column (?!)
     t = xt(k, sorted=True)
-    t.kd.kvalues.kK()[0].attrib = AttrEnum.PARTED
+    t.kvalue().kvalue().kK()[0].attrib = AttrEnum.PARTED
     assert b9(t) == h2b(
         "0x010000002f0000006201630b0002000000610062000000020000000603010000000200000006000100000003000000"
     )

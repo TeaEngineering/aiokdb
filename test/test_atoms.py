@@ -99,9 +99,42 @@ def test_vector_b9() -> None:
 
 def test_vector_d9() -> None:
     # assert d9(h2b("0x010000001200000001000400000000010100")).kB() == [False, True, True, False]
+    # q)-8!0xC0FFEE
     assert d9(h2b("0x0100000011000000040003000000c0ffee")).kG() == array(
         "B", [192, 255, 238]
     )
+    # q)-8!3 4 5 6h
+    assert d9(h2b("0x01000000160000000500040000000300040005000600")).kH() == array(
+        "h", [3, 4, 5, 6]
+    )
+    # q)-8!3 4 5 6i
+    assert d9(
+        h2b("0x010000001e00000006000400000003000000040000000500000006000000")
+    ).kI() == array("l", [3, 4, 5, 6])
+    # q)-8!3 4 5 6j
+    assert d9(
+        h2b(
+            "0x010000002e0000000700040000000300000000000000040000000000000005000000000000000600000000000000"
+        )
+    ).kJ() == array("q", [3, 4, 5, 6])
+    # sym vector
+    # q)-8!`ab`c`defghijklmnopq`rstuvwxy`z
+    assert d9(
+        h2b(
+            "0x010000002d0000000b000500000061620063006465666768696a6b6c6d6e6f7071007273747576777879007a00"
+        )
+    ).kS() == ["ab", "c", "defghijklmnopq", "rstuvwxy", "z"]
+
+    # GUID vector
+    # q)-8!2#"G"$"97ebf398-b01a-0870-b5b7-8fc9e4edd95a"
+    assert d9(
+        h2b(
+            "0x010000002e00000002000200000097ebf398b01a0870b5b78fc9e4edd95a97ebf398b01a0870b5b78fc9e4edd95a"
+        )
+    ).kU() == [
+        uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
+        uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
+    ]
 
 
 def test_overflows_KG() -> None:
@@ -146,6 +179,23 @@ def test_overflows_KH() -> None:
         struct.error, match=r"short format requires -32768 <= number <= 32767"
     ):
         kh(32768)
+
+
+def test_dict_d9() -> None:
+    # q)-8!d:`a`b`c!(1 2i;3 5 9i;enlist 7i)
+    k = d9(
+        h2b(
+            "0x0100000045000000630b0003000000610062006300000003000000060002000000010000000200000006000300000003000000050000000900000006000100000007000000"
+        )
+    )
+    assert k.t == TypeEnum.XD
+    assert k.kkey().t == TypeEnum.KS
+    assert k.kvalue().t == TypeEnum.K
+    assert len(k) == 3
+    assert k.kkey().kS() == ["a", "b", "c"]
+    assert k.kvalue().kK()[0].t == TypeEnum.KI
+    assert len(k.kvalue().kK()[0]) == 2
+    assert k.kvalue().kK()[0].kI() == array("l", [1, 2])
 
 
 def test_dict_checks() -> None:
