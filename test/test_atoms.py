@@ -96,6 +96,10 @@ def test_vector_b9() -> None:
     k.kH().extend([3, 2])
     assert b9(k) == h2b("0x010000001200000005000200000003000200")
 
+    k = ktn(TypeEnum.KC)
+    k.kC().fromunicode("2+2")
+    assert b9(k) == h2b("0x01000000110000000a0003000000322b32")
+
 
 def test_vector_d9() -> None:
     # assert d9(h2b("0x010000001200000001000400000000010100")).kB() == [False, True, True, False]
@@ -117,6 +121,9 @@ def test_vector_d9() -> None:
             "0x010000002e0000000700040000000300000000000000040000000000000005000000000000000600000000000000"
         )
     ).kJ() == array("q", [3, 4, 5, 6])
+    # char vector
+    assert d9(h2b("0x01000000110000000a0003000000322b32")).kC() == array("u", "2+2")
+
     # sym vector
     # q)-8!`ab`c`defghijklmnopq`rstuvwxy`z
     assert d9(

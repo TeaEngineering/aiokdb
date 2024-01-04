@@ -26,6 +26,12 @@ class AttrEnum(enum.IntEnum):
     GROUPED = 4
 
 
+class MessageType(enum.IntEnum):
+    ASYNC = 0
+    SYNC = 1
+    RESPONSE = 2
+
+
 class TypeEnum(enum.IntEnum):
     #    type bytes qtype     ctype  accessor
     K = 0  #   *    K         K
@@ -172,6 +178,9 @@ class KObj:
         raise NotImplementedException()
 
     def kJ(self) -> MutableSequence[int]:
+        raise NotImplementedException()
+
+    def kC(self) -> array.array:
         raise NotImplementedException()
 
     def kS(self) -> Sequence[str]:
@@ -490,6 +499,31 @@ class KLongArray(KRangedType):
         return self, offset + 8 * sz
 
 
+class KCharArray(KRangedType):
+    def __init__(self, t: int = TypeEnum.KJ, sz: int = 0, attr: int = 0) -> None:
+        super().__init__(t, attr=attr)
+        self.j: array.array[str] = array.array("u", [" "] * sz)
+
+    def _paysz(self) -> int:
+        return 2 + 4 + 1 * len(self.j)
+
+    def _databytes(self) -> bytes:
+        bs = self.j.tounicode().encode("ascii")
+        return struct.pack("<bBI", self.t, self.attrib, len(self.j)) + bs
+
+    def kC(self) -> array.array:
+        return self.j
+
+    def __len__(self) -> int:
+        return len(self.j)
+
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[Self, int]:
+        s = data[offset : offset + sz].decode("ascii")
+        self.j = array.array("u", [])
+        self.j.fromunicode(s)
+        return self, offset + sz
+
+
 class KObjArray(KRangedType):
     def __init__(self, t: int = TypeEnum.K) -> None:
         super().__init__(0)
@@ -613,6 +647,7 @@ VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
     TypeEnum.KJ: KLongArray,
     TypeEnum.KS: KIntSymArray,
     TypeEnum.UU: KUUIDArray,
+    TypeEnum.KC: KCharArray,
 }
 
 
@@ -626,6 +661,12 @@ def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
         return VECTOR_CONSTUCTORS[t](t, sz=sz, attr=attr)
     except KeyError:
         raise ValueError(f"ktn for type {tn(t)}")
+
+
+def cv(s: str) -> KObj:
+    k = ktn(TypeEnum.KC)
+    k.kC().fromunicode(s)
+    return k
 
 
 class KDict(KObj):
