@@ -48,13 +48,15 @@ class TypeEnum(enum.IntEnum):
     KP = 12  # 8    timestamp long   kJ (nanoseconds from 2000.01.01)
     KM = 13  # 4    month     int    kI (months from 2000.01.01)
     KD = 14  # 4    date      int    kI (days from 2000.01.01)
+    KZ = 15  # 8    datetime  double kF (DO NOT USE)
     KN = 16  # 8    timespan  long   kJ (nanoseconds)
     KU = 17  # 4    minute    int    kI
     KV = 18  # 4    second    int    kI
     KT = 19  # 4    time      int    kI (millisecond)
-    KZ = 15  # 8    datetime  double kF (DO NOT USE)
     XT = 98  # table
     XD = 99  # dict
+    FN = 100  # function
+    NIL = 101  # nil item
     SD = 127  # sorted dict
     KRR = -128  # error
 
@@ -78,6 +80,7 @@ ATOM_LENGTH: dict[int, int] = {
     TypeEnum.KV: 4,
     TypeEnum.KT: 4,
     TypeEnum.KZ: 8,
+    -TypeEnum.NIL: 1,  # TODO: unhack this
 }
 
 
@@ -214,7 +217,7 @@ class KObjAtom(KObj):
         attr: int = 0,
     ) -> None:
         super().__init__(t, context)
-        self.data: bytes = b""
+        self.data: bytes = b"\x00" * ATOM_LENGTH[-self.t]
 
     # atom setters
     def g(self, g: int) -> Self:
@@ -342,7 +345,6 @@ class KSymAtom(KObj):
 
 class KRangedType(KObj):
     def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
-        print(f"at ranged unpack offset {offset}")
         attrib, sz = struct.unpack_from("<BI", data, offset=offset)
         self.attrib = attrib
         return self._ranged_frombytes(sz, data, offset + 5)
@@ -371,7 +373,6 @@ class KByteArray(KRangedType):
         return len(self.g)
 
     def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[Self, int]:
-        print(f"at kbytes ranged unpack offset {offset} sz {sz}")
         self.g = array.array("B", data[offset : offset + sz])
         return self, offset + sz
 
@@ -599,7 +600,7 @@ def d9(data: bytes) -> KObj:
 def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
-    print(f" at offset {offset} unpacking type {tn(t)}")
+    # print(f" at offset {offset} unpacking type {tn(t)}")
     if t == -TypeEnum.KS:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:
@@ -607,7 +608,9 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
     elif t >= 0 and t <= 15:
         # ranged vector types, need to verify t
         return VECTOR_CONSTUCTORS[t](t).frombytes(data, offset)
-
+    elif t == TypeEnum.NIL:
+        # seems to be a null byte after the type?
+        return KObjAtom(t).frombytes(data, offset)
     elif t == TypeEnum.XD:
         kkeys, offset = _d9_unpackfrom(data, offset)
         kvalues, offset = _d9_unpackfrom(data, offset)
@@ -617,6 +620,10 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
 
 
 # atom constructors
+def ka(t: TypeEnum) -> KObj:
+    return KObjAtom(t)
+
+
 def kg(i: int) -> KObj:
     return KObjAtom(-TypeEnum.KG).g(i)
 

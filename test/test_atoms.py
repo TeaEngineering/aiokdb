@@ -4,7 +4,7 @@ from array import array
 
 import pytest
 
-from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, kg, kh, ki, kj, ks, ktn, xd, xt
+from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, ka, kg, kh, ki, kj, ks, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -218,3 +218,11 @@ def test_table_checks() -> None:
     d = xd(k, v)
     t = xt(d)
     assert len(t) == 0
+
+
+def test_identity() -> None:
+    k = d9(h2b("0x010000000a0000006500"))
+    assert k.t == TypeEnum.NIL
+
+    k = ka(TypeEnum.NIL)
+    assert b2h(b9(k)) == "0x010000000a0000006500"
