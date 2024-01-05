@@ -103,7 +103,10 @@ DEFAULT_CONTEXT = KContext()
 
 
 def tn(t: int) -> str:
-    return f"{TypeEnum(abs(t)).name} ({t})"
+    te = t
+    if te != TypeEnum.KRR:
+        te = abs(t)
+    return f"{TypeEnum(te).name} ({t})"
 
 
 class KObj:
@@ -183,7 +186,7 @@ class KObj:
     def kJ(self) -> MutableSequence[int]:
         raise NotImplementedException()
 
-    def kC(self) -> array.array:
+    def kC(self) -> array.array:  # type: ignore[type-arg]
         raise NotImplementedException()
 
     def kS(self) -> Sequence[str]:
@@ -317,15 +320,13 @@ class KSymAtom(KObj):
         self.data: bytes = b""
 
     def aI(self) -> int:
-        if self.t not in [-TypeEnum.KS]:
-            raise ValueError(f"wrong type {self._tn()} for aI")
         return cast(int, struct.unpack("i", self.data)[0])
 
     def aS(self) -> str:
         return self.context.symbols_enc[self.aI()][0]
 
     def ss(self, s: str) -> Self:
-        if self.t not in [-TypeEnum.KS]:
+        if self.t not in [-TypeEnum.KS, TypeEnum.KRR]:
             raise ValueError(f"wrong type {self._tn()} for ss()")
         self.data = struct.pack("i", self.context.ss(s))
         return self
@@ -340,6 +341,34 @@ class KSymAtom(KObj):
     def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
         bs = data[offset:].index(b"\x00") + 1
         self.ss(data[offset : offset + bs - 1].decode("ascii"))
+        return self, offset + bs
+
+
+class KErrAtom(KObj):
+    def __init__(
+        self,
+        context: KContext = DEFAULT_CONTEXT,
+    ) -> None:
+        super().__init__(TypeEnum.KRR, context)
+        self.data: bytes = b""
+
+    def aS(self) -> str:
+        return self.data[:-1].decode("ascii")
+
+    def ss(self, s: str) -> Self:
+        self.data = bytes(s, "ascii") + b"\x00"
+        return self
+
+    # serialisation
+    def _databytes(self) -> bytes:
+        return super()._databytes() + self.data
+
+    def _paysz(self) -> int:
+        return super()._paysz() + len(self.data)
+
+    def frombytes(self, data: bytes, offset: int) -> tuple[Self, int]:
+        bs = data[offset:].index(b"\x00") + 1
+        self.data = data[offset : offset + bs - 1]
         return self, offset + bs
 
 
@@ -512,8 +541,11 @@ class KCharArray(KRangedType):
         bs = self.j.tounicode().encode("ascii")
         return struct.pack("<bBI", self.t, self.attrib, len(self.j)) + bs
 
-    def kC(self) -> array.array:
+    def kC(self) -> array.array:  # type: ignore[type-arg]
         return self.j
+
+    def aS(self) -> str:
+        return self.j.tounicode()
 
     def __len__(self) -> int:
         return len(self.j)
@@ -601,7 +633,7 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
     # print(f" at offset {offset} unpacking type {tn(t)}")
-    if t == -TypeEnum.KS:
+    if t == -TypeEnum.KS or t == TypeEnum.KRR:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:
         return KObjAtom(t).frombytes(data, offset)
@@ -721,6 +753,10 @@ class KFlip(KObj):
 
     def kvalue(self) -> KObj:
         return self._kvalue
+
+
+def krr(msg: str) -> KSymAtom:
+    return KSymAtom(TypeEnum.KRR).ss(msg)
 
 
 class KException(Exception):

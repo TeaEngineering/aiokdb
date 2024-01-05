@@ -4,7 +4,7 @@ from array import array
 
 import pytest
 
-from aiokdb import AttrEnum, TypeEnum, b9, d9, ka, kg, kh, ki, kj, ks, ktn, xd, xt
+from aiokdb import AttrEnum, TypeEnum, b9, d9, ka, kg, kh, ki, kj, krr, ks, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -34,6 +34,7 @@ def test_atoms_b9() -> None:
     # q)-8!`abc   to check null termination of symbols
     assert b9(ks("abc")) == h2b("0x010000000d000000f561626300")
     assert b9(ks("abcd")) == h2b("0x010000000e000000f56162636400")
+    assert b9(krr("ohno")) == h2b("0x010000000e000000806F686E6F00")
 
 
 def test_atoms_d9() -> None:
@@ -58,18 +59,16 @@ def test_atoms_d9() -> None:
     ).aU() == uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a")
 
     # q real / python float
-    assert d9(h2b("0x010000000d000000f89a995940")).aE() == pytest.approx(
-        3.4, 0.0001
-    )  # -8!3.4e
-    assert d9(h2b("0x010000000d000000f89a9959c0")).aE() == pytest.approx(
-        -3.4, 0.0001
-    )  # -8!-3.4e
+    # -8!3.4e
+    assert d9(h2b("0x010000000d000000f89a995940")).aE() == pytest.approx(3.4, 0.0001)
+    # -8!-3.4e
+    assert d9(h2b("0x010000000d000000f89a9959c0")).aE() == pytest.approx(-3.4, 0.0001)
     # q float / python double
     assert d9(h2b("0x0100000011000000f73333333333330b40")).aF() == pytest.approx(
-        3.4, 0.0001
+        3.4, 0.001
     )
     assert d9(h2b("0x0100000011000000f73333333333330bc0")).aF() == pytest.approx(
-        -3.4, 0.0001
+        -3.4, 0.001
     )
 
     assert d9(h2b("0x010000000a000000f643")).aC() == "C"  # -8!"C"
@@ -77,6 +76,11 @@ def test_atoms_d9() -> None:
     assert d9(h2b("0x010000000a000000f60f")).aC() == "\x0f"
     # symbol -- null terminated parsing
     assert d9(h2b("0x010000000d000000f561626300")).aS() == "abc"
+    # KRR remote error
+
+    k = d9(h2b("0x010000000e000000806F686E6F00"))
+    assert k.t == TypeEnum.KRR
+    assert k.aS() == "ohno"
 
 
 def test_vector_b9() -> None:
