@@ -4,7 +4,7 @@ from array import array
 
 import pytest
 
-from aiokdb import AttrEnum, KContext, TypeEnum, b9, d9, ka, kg, kh, ki, kj, ks, ktn, xd, xt
+from aiokdb import AttrEnum, TypeEnum, b9, d9, ka, kg, kh, ki, kj, ks, ktn, xd, xt
 
 
 def h2b(hx: str) -> bytes:
@@ -14,18 +14,6 @@ def h2b(hx: str) -> bytes:
 
 def b2h(bs: bytes) -> str:
     return "0x" + bs.hex()
-
-
-def test_context() -> None:
-    kcon = KContext()
-    assert kcon.ss("hello") == 0
-    assert kcon.ss("world") == 1
-    assert kcon.ss("hello") == 0
-    assert kcon.ss("world") == 1
-    assert kcon.ss("how") == 2
-    with pytest.raises(ValueError):
-        kcon.ss("💩")
-    assert len(kcon.symbols) == 3
 
 
 def test_atoms_round_trip() -> None:

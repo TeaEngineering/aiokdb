@@ -723,6 +723,10 @@ class KFlip(KObj):
         return self._kvalue
 
 
+class KException(Exception):
+    pass
+
+
 def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
     if sorted:
         return KDict(kkeys, kvalues, TypeEnum.SD)
