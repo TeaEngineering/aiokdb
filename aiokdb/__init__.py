@@ -3,7 +3,7 @@ import enum
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
-from typing import Self, Type, cast
+from typing import BinaryIO, Self, Type, cast
 
 __all__ = [
     "b9",
@@ -197,6 +197,9 @@ class KObj:
         raise NotImplementedException()
 
     def kvalue(self) -> "KObj":
+        raise NotImplementedException()
+
+    def __getitem__(self, item: str) -> "KObj":
         raise NotImplementedException()
 
     # TODO: clean this up by having kS() return a MutableSequence(str) that
@@ -529,6 +532,30 @@ class KLongArray(KRangedType):
         return self, offset + 8 * sz
 
 
+class KFloatArray(KRangedType):
+    def __init__(self, t: int = TypeEnum.KF, sz: int = 0, attr: int = 0) -> None:
+        super().__init__(t, attr=attr)
+        self.j = array.array("d", [0] * sz)
+
+    def _paysz(self) -> int:
+        return 2 + 4 + 8 * len(self.j)
+
+    def _databytes(self) -> bytes:
+        return struct.pack("<bBI", self.t, self.attrib, len(self.j)) + struct.pack(
+            f"<{len(self.j)}d", *self.j
+        )
+
+    def kF(self) -> MutableSequence[float]:
+        return self.j
+
+    def __len__(self) -> int:
+        return len(self.j)
+
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[Self, int]:
+        self.j = array.array("d", data[offset : offset + 8 * sz])
+        return self, offset + 8 * sz
+
+
 class KCharArray(KRangedType):
     def __init__(self, t: int = TypeEnum.KJ, sz: int = 0, attr: int = 0) -> None:
         super().__init__(t, attr=attr)
@@ -632,12 +659,12 @@ def d9(data: bytes) -> KObj:
 def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
-    # print(f" at offset {offset} unpacking type {tn(t)}")
+    print(f" at offset {offset} unpacking type {tn(t)}")
     if t == -TypeEnum.KS or t == TypeEnum.KRR:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:
         return KObjAtom(t).frombytes(data, offset)
-    elif t >= 0 and t <= 15:
+    elif t >= 0 and t <= 16:
         # ranged vector types, need to verify t
         return VECTOR_CONSTUCTORS[t](t).frombytes(data, offset)
     elif t == TypeEnum.NIL:
@@ -647,6 +674,11 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
         kkeys, offset = _d9_unpackfrom(data, offset)
         kvalues, offset = _d9_unpackfrom(data, offset)
         return KDict(kkeys, kvalues), offset
+    elif t == TypeEnum.XT:
+        kkeys, offset = _d9_unpackfrom(data, offset + 1)
+        if kkeys.t != TypeEnum.XD:
+            raise ValueError("flip not of a dict?")
+        return KFlip(kkeys), offset
 
     raise ValueError(f"Unable to d9 unpack t={t}")
 
@@ -687,6 +719,9 @@ VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
     TypeEnum.KS: KIntSymArray,
     TypeEnum.UU: KUUIDArray,
     TypeEnum.KC: KCharArray,
+    TypeEnum.KN: KLongArray,
+    TypeEnum.KP: KLongArray,
+    TypeEnum.KF: KFloatArray,
 }
 
 
@@ -735,9 +770,16 @@ class KDict(KObj):
     def kvalue(self) -> KObj:
         return self._kvalue
 
+    def __getitem__(self, item: str) -> KObj:
+        try:
+            idx = self.kkey().kS().index(item)
+        except ValueError:
+            raise KeyError(f"Key not found {item}")
+        return self.kvalue().kK()[idx]
+
 
 class KFlip(KObj):
-    def __init__(self, kd: KDict, sorted: bool = False):
+    def __init__(self, kd: KObj, sorted: bool = False):
         attr = AttrEnum.NONE
         if sorted:
             attr = AttrEnum.SORTED
@@ -771,3 +813,11 @@ def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
 
 def xt(kd: KDict, sorted: bool = False) -> KFlip:
     return KFlip(kd, sorted=sorted)
+
+
+def fromfile(f: BinaryIO) -> KObj:
+    # theres no length header since files have a size
+    rb = f.read()
+    assert rb[0:2] == b"\xff\x01"
+    k, _ = _d9_unpackfrom(rb, 2)
+    return k

@@ -195,6 +195,9 @@ def test_dict_d9() -> None:
     assert k.kvalue().kK()[0].t == TypeEnum.KI
     assert len(k.kvalue().kK()[0]) == 2
     assert k.kvalue().kK()[0].kI() == array("l", [1, 2])
+    assert k["a"].kI() == array("l", [1, 2])
+    with pytest.raises(KeyError):
+        k["z"]
 
 
 def test_dict_checks() -> None:
@@ -210,6 +213,21 @@ def test_table_checks() -> None:
     d = xd(k, v)
     t = xt(d)
     assert len(t) == 0
+
+
+def test_table_d9() -> None:
+    t = d9(
+        h2b(
+            "0x010000002f0000006200630b0002000000610062000000020000000600010000000200000006000100000003000000"
+        )
+    )
+    assert t.t == TypeEnum.XT
+    d = t.kvalue()
+    assert d.t == TypeEnum.XD
+    assert d.kkey().kS() == ["a", "b"]
+    As, Bs = d.kvalue().kK()
+    assert As.kI() == array("l", [2])
+    assert Bs.kI() == array("l", [3])
 
 
 def test_identity() -> None:
