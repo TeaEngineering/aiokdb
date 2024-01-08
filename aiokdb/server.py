@@ -25,6 +25,9 @@ class KdbReader:
         print(f"> recv ver={ver} msgtype={msgtype} flags={flags} msglen={msglen}")
         payload = await self.reader.readexactly(msglen - 8)
         # TODO: if compressed, decompress payload
+        if flags != 0:
+            print(payload)
+            raise ValueError("compressed payload NYI {flags}")
         k = d9(msgh + payload)
         if self.raise_krr and k.t == TypeEnum.KRR:
             raise KException(k.aS())

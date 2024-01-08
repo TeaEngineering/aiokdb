@@ -186,6 +186,9 @@ class KObj:
     def kJ(self) -> MutableSequence[int]:
         raise NotImplementedException()
 
+    def kF(self) -> MutableSequence[float]:
+        raise NotImplementedException()
+
     def kC(self) -> array.array:  # type: ignore[type-arg]
         raise NotImplementedException()
 
@@ -806,6 +809,7 @@ class KException(Exception):
 
 
 def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
+    assert len(kkeys) == len(kvalues)
     if sorted:
         return KDict(kkeys, kvalues, TypeEnum.SD)
     return KDict(kkeys, kvalues)
