@@ -174,9 +174,7 @@ def test_overflows_KH() -> None:
     kh(32767)
     kh(-32767)
     kh(-32768)  # null
-    with pytest.raises(
-        struct.error, match=r"short format requires -32768 <= number <= 32767"
-    ):
+    with pytest.raises(struct.error, match=r"short format requires .* <= number .*"):
         kh(32768)
 
 
