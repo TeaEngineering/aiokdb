@@ -1,5 +1,5 @@
 import itertools
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Iterable, Optional, Sequence
 
 from aiokdb import KObj, TypeEnum
@@ -156,7 +156,7 @@ class AsciiFormatter:
             # formatting with full precision
             nanos = j % 1000
             micros = j // 1000
-            origin = int(datetime(2000, 1, 1, tzinfo=UTC).timestamp())
+            origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
             dt = datetime.utcfromtimestamp(origin + micros / 1000000.0)
             return dt.strftime("%Y.%m.%dD%H:%M:%S:%f") + f"{nanos:03}"
         raise ValueError(f"No formatter for {obj} with type {obj._tn()}")
