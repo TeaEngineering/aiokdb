@@ -14,7 +14,7 @@ __all__ = [
 # mypy: disallow-untyped-defs
 
 
-class NotImplementedException(Exception):
+class WrongTypeForOperationError(TypeError):
     pass
 
 
@@ -130,108 +130,111 @@ class KObj:
     def _tn(self) -> str:
         return tn(self.t)
 
+    def _te(self) -> Exception:
+        return WrongTypeForOperationError(f"Not available for {self._tn()}")
+
     def __len__(self) -> int:
         return 0
 
     # atom setters
     def ss(self, s: str) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def b(self, b: bool) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def g(self, g: int) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def h(self, h: int) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def i(self, i: int) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def j(self, j: int) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     # atom getters
     def aB(self) -> bool:
-        raise NotImplementedException()
+        raise self._te()
 
     def aG(self) -> int:
-        raise NotImplementedException()
+        raise self._te()
 
     def aI(self) -> int:
-        raise NotImplementedException()
+        raise self._te()
 
     def aH(self) -> int:
-        raise NotImplementedException()
+        raise self._te()
 
     def aJ(self) -> int:
-        raise NotImplementedException()
+        raise self._te()
 
     def aS(self) -> str:
-        raise NotImplementedException()
+        raise self._te()
 
     def aU(self) -> uuid.UUID:
-        raise NotImplementedException()
+        raise self._te()
 
     def aE(self) -> float:
-        raise NotImplementedException()
+        raise self._te()
 
     def aF(self) -> float:
-        raise NotImplementedException()
+        raise self._te()
 
     def aC(self) -> str:
-        raise NotImplementedException()
+        raise self._te()
 
     # vector getters
     def kK(self) -> MutableSequence["KObj"]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kU(self) -> MutableSequence[uuid.UUID]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kB(self) -> MutableSequence[bool]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kG(self) -> MutableSequence[int]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kH(self) -> MutableSequence[int]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kI(self) -> MutableSequence[int]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kJ(self) -> MutableSequence[int]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kF(self) -> MutableSequence[float]:
-        raise NotImplementedException()
+        raise self._te()
 
     def kC(self) -> array.array:  # type: ignore[type-arg]
-        raise NotImplementedException()
+        raise self._te()
 
     def kS(self) -> Sequence[str]:
-        raise NotImplementedException()
+        raise self._te()
 
     # dictionary/flip
     def kkey(self) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def kvalue(self) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     def __getitem__(self, item: str) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     # TODO: clean this up by having kS() return a MutableSequence(str) that
     # writes through to the int array
     def appendS(self, *ss: str) -> "KObj":
-        raise NotImplementedException()
+        raise self._te()
 
     # deserialise content from stream
     def frombytes(self, data: bytes, offset: int) -> tuple["KObj", int]:
-        raise NotImplementedException()
+        raise self._te()
 
 
 # constructors always take type t, optional context, and
@@ -410,7 +413,7 @@ class KRangedType(KObj):
         return self._ranged_frombytes(sz, data, offset + 5)
 
     def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
-        raise NotImplementedException()
+        raise self._te()
 
 
 class KByteArray(KRangedType):

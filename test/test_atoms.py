@@ -263,6 +263,12 @@ def test_identity() -> None:
     k = ka(TypeEnum.NIL)
     assert b2h(b9(k)) == "0x010000000a0000006500"
 
+    with pytest.raises(Exception, match=r"wrong type NIL \(101\) for aJ"):
+        k.aJ()
+
+    with pytest.raises(Exception, match=r"Not available for NIL \(101\)"):
+        k.kJ()
+
 
 def test_mixed() -> None:
     # symbol, long, symbol, bool
