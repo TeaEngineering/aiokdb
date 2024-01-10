@@ -4,7 +4,24 @@ from array import array
 
 import pytest
 
-from aiokdb import AttrEnum, TypeEnum, b9, d9, ka, kg, kh, ki, kj, krr, ks, ktn, xd, xt
+from aiokdb import (
+    AttrEnum,
+    TypeEnum,
+    b9,
+    d9,
+    ka,
+    kb,
+    kg,
+    kh,
+    ki,
+    kj,
+    kk,
+    krr,
+    ks,
+    ktn,
+    xd,
+    xt,
+)
 
 
 def h2b(hx: str) -> bytes:
@@ -35,6 +52,17 @@ def test_atoms_b9() -> None:
     assert b9(ks("abc")) == h2b("0x010000000d000000f561626300")
     assert b9(ks("abcd")) == h2b("0x010000000e000000f56162636400")
     assert b9(krr("ohno")) == h2b("0x010000000e000000806F686E6F00")
+    assert b9(kb(False)) == h2b("0x010000000a000000ff00")
+    assert b9(kb(True)) == h2b("0x010000000a000000ff01")
+
+
+def test_atoms_d9b9() -> None:
+    assert d9(b9(kb(True))).aB() is True
+    assert d9(b9(kb(False))).aB() is False
+    assert d9(b9(kg(12))).aG() == 12
+    assert d9(b9(kh(12))).aH() == 12
+    assert d9(b9(ki(12))).aI() == 12
+    assert d9(b9(kj(12))).aJ() == 12
 
 
 def test_atoms_d9() -> None:
@@ -234,3 +262,12 @@ def test_identity() -> None:
 
     k = ka(TypeEnum.NIL)
     assert b2h(b9(k)) == "0x010000000a0000006500"
+
+
+def test_mixed() -> None:
+    # symbol, long, symbol, bool
+    k = ktn(TypeEnum.K)
+    k.kK().extend([ks("function"), kj(17), ks("XBT"), kb(False)])
+
+    k2 = kk(ks("function"), kj(17), ks("XBT"), kb(False))
+    assert b9(k) == b9(k2)
