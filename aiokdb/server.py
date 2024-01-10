@@ -5,13 +5,17 @@ import logging
 import os
 import struct
 from functools import partial
-from typing import Any, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 from aiokdb import KException, KObj, MessageType, TypeEnum, b9, d9, krr
 
 
 class CredentialsException(Exception):
     pass
+
+
+# TypeAlias for Optional KObj callback
+OptKcb = Optional[Callable[[KObj], None]]
 
 
 class KdbReader:
@@ -52,17 +56,27 @@ class KdbWriter:
         print(f"< sending {bs!r}")
         self.writer.write(bs)
 
-    async def sync_req(self, obj: KObj) -> KObj:
+    async def sync_req(self, obj: KObj, ooob: OptKcb = None) -> KObj:
         # responses arrive in the order that requests are sent
         # if tasks are calling this method along with read() directly
         # then responses will get muddled up or lost
+        #
+        # ooob is out-of-order-buffer, to optionally capture any async messages
+        # or sync requests found while waiting for our response, e.g.
+        #
+        #  buffer = collections.deqeue(maxlen=10)
+        #  await wr.sync_req(obj, ooob=buffer.append)
+        #
         self.write(obj)
         while True:
             msgtype, k = await self.reader.read()
             if msgtype == MessageType.RESPONSE:
                 return k
-            # discard ASYNC messages, or SYNC requests from the server
-            logging.warning(f"recieved {msgtype} whilst awaiting response.")
+            # store ASYNC messages, or SYNC requests from the server
+            if ooob is not None:
+                ooob(k)
+            else:
+                logging.warning(f"recieved {msgtype} whilst awaiting response.")
 
     def close(self) -> None:
         self.writer.close()

@@ -1,6 +1,6 @@
 import pytest
 
-from aiokdb import KException, KObj, cv
+from aiokdb import KException, KObj, MessageType, cv, kj
 from aiokdb.client import open_qipc_connection
 from aiokdb.server import CredentialsException, KdbWriter, ServerContext, start_qserver
 
@@ -81,6 +81,36 @@ async def test_client_auth_defined_port() -> None:
         client_rd, client_wr = await open_qipc_connection(
             port=6778, user=None, password=None
         )
+
+    server.close()
+    await server.wait_closed()
+
+
+@pytest.mark.asyncio
+async def test_server_async() -> None:
+    class AsyncServerContext(ServerContext):
+        async def on_sync_request(self, cmd: KObj, dotzw: KdbWriter) -> KObj:
+            # async message sent during sync request handling
+            dotzw.write(kj(1), MessageType.ASYNC)
+            # return value becomes the sync response
+            return kj(2)
+
+    context = AsyncServerContext("tangoxray")
+    server = await start_qserver(6778, context)
+
+    client_rd, client_wr = await open_qipc_connection(
+        port=6778, user="troy", password="tangoxray"
+    )
+
+    ooob: list[KObj] = []
+    kr = await client_wr.sync_req(cv("1+2"), ooob=ooob.append)
+    assert kr.aJ() == 2
+
+    assert len(ooob) == 1
+    assert ooob[0].aJ() == 1
+
+    client_wr.close()
+    await client_wr.wait_closed()
 
     server.close()
     await server.wait_closed()
