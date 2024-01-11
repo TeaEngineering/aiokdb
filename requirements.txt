@@ -1,4 +1,4 @@
 pytest
 pytest-asyncio
 black
-
+prompt-toolkit==3.0.43
