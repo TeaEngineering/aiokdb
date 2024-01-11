@@ -566,6 +566,30 @@ class KLongArray(KRangedType):
 class KFloatArray(KRangedType):
     def __init__(self, t: int = TypeEnum.KF, sz: int = 0, attr: int = 0) -> None:
         super().__init__(t, attr=attr)
+        self._e = array.array("f", [0] * sz)
+
+    def _paysz(self) -> int:
+        return 2 + 4 + 4 * len(self._e)
+
+    def _databytes(self) -> bytes:
+        return struct.pack("<bBI", self.t, self.attrib, len(self._e)) + struct.pack(
+            f"<{len(self._e)}f", *self._e
+        )
+
+    def kF(self) -> MutableSequence[float]:
+        return self._e
+
+    def __len__(self) -> int:
+        return len(self._e)
+
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+        self._e = array.array("f", data[offset : offset + 4 * sz])
+        return self, offset + 4 * sz
+
+
+class KDoubleArray(KRangedType):
+    def __init__(self, t: int = TypeEnum.KF, sz: int = 0, attr: int = 0) -> None:
+        super().__init__(t, attr=attr)
         self._f = array.array("d", [0] * sz)
 
     def _paysz(self) -> int:
@@ -696,7 +720,7 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:
         return KObjAtom(t).frombytes(data, offset)
-    elif t >= 0 and t <= 16:
+    elif t >= 0 and t < 20:
         # ranged vector types, need to verify t
         return VECTOR_CONSTUCTORS[t](t).frombytes(data, offset)
     elif t == TypeEnum.NIL:
@@ -755,9 +779,16 @@ VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
     TypeEnum.KS: KIntSymArray,
     TypeEnum.UU: KUUIDArray,
     TypeEnum.KC: KCharArray,
-    TypeEnum.KN: KLongArray,
     TypeEnum.KP: KLongArray,
-    TypeEnum.KF: KFloatArray,
+    TypeEnum.KF: KDoubleArray,
+    TypeEnum.KE: KFloatArray,
+    TypeEnum.KM: KIntArray,
+    TypeEnum.KD: KIntArray,
+    TypeEnum.KZ: KDoubleArray,
+    TypeEnum.KN: KLongArray,
+    TypeEnum.KU: KIntArray,
+    TypeEnum.KV: KIntArray,
+    TypeEnum.KT: KIntArray,
 }
 
 
