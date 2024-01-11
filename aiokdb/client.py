@@ -55,9 +55,9 @@ if __name__ == "__main__":
         r, w = await open_qipc_connection(
             host=args.host, port=args.port, user=args.user, password=args.password
         )
-        w.write(cv("2+2"))
-        mtype, obj = await r.read()
-        print(f"Got object {obj}")
+        while True:
+            obj = await w.sync_req(cv(input("Enter query: ")))
+            print(f"Got object {obj}")
         return None
 
     asyncio.run(main(args))
