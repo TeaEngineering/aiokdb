@@ -33,8 +33,8 @@ async def main(args: Any) -> None:
             return
         except EOFError:
             break
-        except Exception as ex:
-            traceback.print_exception(ex, limit=-2)
+        except Exception:
+            traceback.print_exc(limit=-2)
     return None
 
 
