@@ -239,13 +239,39 @@ def test_dict_checks() -> None:
     d["key1"].t == TypeEnum.KJ
     assert d["key1"].aJ() == 1
 
+    k = ktn(TypeEnum.KH, sz=2)
+    v = ktn(TypeEnum.KH, sz=1)
+    with pytest.raises(ValueError, match="dict keys and values must be same length"):
+        xt(xd(k, v))
+
 
 def test_table_checks() -> None:
+    # blocked by type system
+    # with pytest.raises(ValueError, match="can only flip a dict"):
+    #    xt(kj(5))
+
     k = ktn(TypeEnum.KH)
     v = ktn(TypeEnum.KH)
+    with pytest.raises(ValueError, match="must have >0 columns"):
+        xt(xd(k, v))
+
+    # you can build these dictionaries, but not flip them
+    k = ktn(TypeEnum.KH, sz=2)
+    v = ktn(TypeEnum.KH, sz=2)
     d = xd(k, v)
-    t = xt(d)
-    assert len(t) == 0
+    with pytest.raises(ValueError, match="must have K vector holding cols"):
+        xt(d)
+
+    k = ktn(TypeEnum.KH, sz=2)
+    v = kk(ktn(TypeEnum.KJ, sz=3), ktn(TypeEnum.KJ, sz=3))
+    d = xd(k, v)
+    with pytest.raises(ValueError, match="dict key must be S vector of column names"):
+        xt(d)
+
+    k = ktn(TypeEnum.KS, sz=2)
+    v = kk(ktn(TypeEnum.KJ, sz=3), ktn(TypeEnum.KJ, sz=3))
+    t = xt(xd(k, v))
+    assert len(t) == 3
 
 
 def test_table_d9() -> None:
@@ -261,6 +287,8 @@ def test_table_d9() -> None:
     As, Bs = d.kvalue().kK()
     assert As.kI() == array("l", [2])
     assert Bs.kI() == array("l", [3])
+    # there is one row in this table
+    assert len(t) == 1
 
 
 def test_identity() -> None:

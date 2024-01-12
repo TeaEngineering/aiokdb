@@ -134,7 +134,7 @@ class KObj:
         return WrongTypeForOperationError(f"Not available for {self._tn()}")
 
     def __len__(self) -> int:
-        return 0
+        raise self._te()
 
     # atom setters
     def ss(self, s: str) -> "KObj":
@@ -818,6 +818,8 @@ def cv(s: str) -> KObj:
 
 class KDict(KObj):
     def __init__(self, kkeys: KObj, kvalues: KObj, t: TypeEnum = TypeEnum.XD):
+        if len(kkeys) != len(kvalues):
+            raise ValueError("dict keys and values must be same length")
         super().__init__(t)
         if t == TypeEnum.SD and kkeys.t != TypeEnum.XT and kkeys.attrib == 0:
             raise ValueError(f"Keys not sorted for SD {kkeys._tn()}")
@@ -864,10 +866,20 @@ class KDict(KObj):
 
 class KFlip(KObj):
     def __init__(self, kd: KObj, sorted: bool = False):
+        if kd.t != TypeEnum.XD:
+            raise ValueError(f"can only flip a dict, not {kd._tn()}")
+        if len(kd.kkey()) == 0:
+            raise ValueError("must have >0 columns")
+        if kd.kvalue().t != TypeEnum.K:
+            raise ValueError("must have K vector holding cols")
+        if kd.kkey().t != TypeEnum.KS:
+            raise ValueError("dict key must be S vector of column names")
+        if len(kd.kvalue().kK()[0]) == 0:
+            raise ValueError("cannot have zero columns")
+
         attr = AttrEnum.NONE
         if sorted:
             attr = AttrEnum.SORTED
-            assert kd.t == TypeEnum.XD
         super().__init__(TypeEnum.XT, attr=attr)
         self._kvalue = kd
 
@@ -880,6 +892,17 @@ class KFlip(KObj):
     def kvalue(self) -> KObj:
         return self._kvalue
 
+    def __len__(self) -> int:
+        # the length of a table is not the length of it's contained dictionary, as that is the number of columns.
+        # we need to read-through to the first columns data.
+        assert self.kvalue().t == TypeEnum.XD
+        tdict_values = self.kvalue().kvalue()
+        if len(tdict_values) == 0:
+            raise ValueError("flip contains a dict with no values, so has no length")
+        assert tdict_values.t == TypeEnum.K
+        first_col = tdict_values.kK()[0]
+        return len(first_col)
+
 
 def krr(msg: str) -> KObj:
     return KSymAtom(TypeEnum.KRR).ss(msg)
@@ -890,7 +913,6 @@ class KException(Exception):
 
 
 def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
-    assert len(kkeys) == len(kvalues)
     if sorted:
         return KDict(kkeys, kvalues, TypeEnum.SD)
     return KDict(kkeys, kvalues)
