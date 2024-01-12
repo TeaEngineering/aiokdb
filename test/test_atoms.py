@@ -273,6 +273,11 @@ def test_table_checks() -> None:
     t = xt(xd(k, v))
     assert len(t) == 3
 
+    # zero length table
+    v = kk(ktn(TypeEnum.KJ), ktn(TypeEnum.KJ))
+    t = xt(xd(k, v))
+    assert len(t) == 0
+
 
 def test_table_d9() -> None:
     t = d9(

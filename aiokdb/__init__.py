@@ -732,8 +732,6 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
         return KDict(kkeys, kvalues), offset
     elif t == TypeEnum.XT:
         kkeys, offset = _d9_unpackfrom(data, offset + 1)
-        if kkeys.t != TypeEnum.XD:
-            raise ValueError("flip not of a dict?")
         return KFlip(kkeys), offset
 
     raise ValueError(f"Unable to d9 unpack t={t}")
@@ -874,7 +872,7 @@ class KFlip(KObj):
             raise ValueError("must have K vector holding cols")
         if kd.kkey().t != TypeEnum.KS:
             raise ValueError("dict key must be S vector of column names")
-        if len(kd.kvalue().kK()[0]) == 0:
+        if len(kd.kvalue().kK()) == 0:
             raise ValueError("cannot have zero columns")
 
         attr = AttrEnum.NONE
