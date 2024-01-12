@@ -232,6 +232,13 @@ def test_dict_checks() -> None:
     d = xd(k, v)
     assert len(d) == 0
 
+    k = kk(ks("key1"), ks("key2"))
+    v = kk(kj(1), kj(2))
+    d = xd(k, v)
+    assert len(d) == 2
+    d["key1"].t == TypeEnum.KJ
+    assert d["key1"].aJ() == 1
+
 
 def test_table_checks() -> None:
     k = ktn(TypeEnum.KH)

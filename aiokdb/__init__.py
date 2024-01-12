@@ -844,11 +844,22 @@ class KDict(KObj):
         return self._kvalue
 
     def __getitem__(self, item: str) -> KObj:
-        try:
-            idx = self.kkey().kS().index(item)
-        except ValueError:
+        if self._kkey.t == TypeEnum.KS:
+            try:
+                idx = self.kkey().kS().index(item)
+                return self.kvalue().kK()[idx]
+            except ValueError:
+                raise KeyError(f"Key not found {item}")
+        elif self._kkey.t == TypeEnum.K:
+            # check for any nested atomic symbol keys within the K object array
+            for idx in range(len(self._kkey)):
+                k = self._kkey.kK()[idx]
+                if k.t == -TypeEnum.KS:
+                    if k.aS() == item:
+                        return self.kvalue().kK()[idx]
             raise KeyError(f"Key not found {item}")
-        return self.kvalue().kK()[idx]
+
+        raise KeyError(f"Key lookup not possible on {self._kkey._tn()}")
 
 
 class KFlip(KObj):
