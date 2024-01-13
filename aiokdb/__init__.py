@@ -808,7 +808,6 @@ def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
         if sz > 0:
             raise ValueError("ktn K can only be empty at initialisation")
         return KObjArray(t)
-
     try:
         return VECTOR_CONSTUCTORS[t](t, sz=sz, attr=attr)
     except KeyError:

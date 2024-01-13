@@ -1,4 +1,5 @@
-from aiokdb import TypeEnum, d9, ktn, xd, xt
+from aiokdb import TypeEnum, d9, ka, kj, kk, ks, ktn, xd, xt
+from aiokdb.extras import ktni, ktns
 from aiokdb.format import AsciiFormatter
 
 
@@ -38,10 +39,7 @@ def test_format_unkeyed_table() -> None:
 
 
 def test_format_keyed_table() -> None:
-    expected = """\
-a| b
--|--
-2| 3"""
+    expected = "a| b\n-|--\n2| 3"
 
     t = d9(
         bytes.fromhex(
@@ -50,3 +48,15 @@ a| b
     )
     fmt = AsciiFormatter()
     assert fmt.format(t) == expected
+
+
+def test_format_dict() -> None:
+    d = xd(ktni(TypeEnum.KJ, 3, 612, 6), ktns(TypeEnum.KS, "hi", "p", "dog"))
+    fmt = AsciiFormatter()
+    assert fmt.format(d) == "3  | hi\n612| p\n6  | dog"
+
+    d = xd(ktni(TypeEnum.KJ, 3, 612, 6), kk(kj(56), ks("xray"), ka(-TypeEnum.UU)))
+    fmt = AsciiFormatter()
+    assert (
+        fmt.format(d) == "3  | 56\n612| xray\n6  | 00000000-0000-0000-0000-000000000000"
+    )

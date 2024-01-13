@@ -22,6 +22,7 @@ from aiokdb import (
     xd,
     xt,
 )
+from aiokdb.extras import ktni
 
 
 def h2b(hx: str) -> bytes:
@@ -115,6 +116,9 @@ def test_vector_b9() -> None:
     k = ktn(TypeEnum.KH)
     k.kH().extend([3, 2])
     assert b9(k) == h2b("0x010000001200000005000200000003000200")
+
+    k2 = ktni(TypeEnum.KH, 3, 2)
+    assert k == k2
 
     k = ktn(TypeEnum.KC)
     k.kC().fromunicode("2+2")
