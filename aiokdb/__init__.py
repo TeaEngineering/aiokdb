@@ -32,6 +32,11 @@ class MessageType(enum.IntEnum):
     RESPONSE = 2
 
 
+class Nulls:
+    j: int = -9223372036854775808
+    i: int = -2147483648
+
+
 class TypeEnum(enum.IntEnum):
     #    type bytes qtype     ctype  accessor
     K = 0  #   *    K         K

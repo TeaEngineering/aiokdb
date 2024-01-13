@@ -2,7 +2,7 @@ import itertools
 from datetime import datetime, timezone
 from typing import Iterable, Optional, Sequence
 
-from aiokdb import KObj, TypeEnum
+from aiokdb import KObj, Nulls, TypeEnum
 
 # Keeping formating external to KObj since it complicates the implementation.
 # This produces AsciiFormatter produces numpy-like formatting, ie. it truncates the central section of a table
@@ -112,14 +112,14 @@ class AsciiFormatter:
 
         if obj.t == TypeEnum.KJ:
             j = obj.kJ()[index]
-            if j == -9223372036854775808:
+            if j == Nulls.j:
                 return ""
             if j == 9223372036854775807:
                 return "0W"
             return str(j)
         elif obj.t == TypeEnum.KI:
             i = obj.kI()[index]
-            if i == -2147483648:
+            if i == Nulls.i:
                 return ""
             return str(i)
         elif obj.t == TypeEnum.KS:
@@ -128,7 +128,7 @@ class AsciiFormatter:
             return str(obj.kG()[index])
         elif obj.t == TypeEnum.KN:
             j = obj.kJ()[index]
-            if j == -9223372036854775808:
+            if j == Nulls.j:
                 return ""
             # timespan (nanos) q) "n"$1  0D00:00:00.000000001
             secs = j // 1000000000
@@ -149,7 +149,7 @@ class AsciiFormatter:
             return str(obj.kF()[index])
         elif obj.t == TypeEnum.KP:
             j = obj.kJ()[index]
-            if j == -9223372036854775808:
+            if j == Nulls.j:
                 return ""
             # timestamp (nanos) q)"p"$1  2000.01.01D00:00:00.000000001
             # python timestamps have microsecond precision, so on our own
