@@ -3,7 +3,7 @@ import enum
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
-from typing import BinaryIO, Type, cast
+from typing import Any, BinaryIO, Type, cast
 
 __all__ = [
     "b9",
@@ -235,6 +235,12 @@ class KObj:
     # deserialise content from stream
     def frombytes(self, data: bytes, offset: int) -> tuple["KObj", int]:
         raise self._te()
+
+    def __eq__(self, other: Any) -> bool:
+        # this could be optimised in subclasses with appropriate descent logic
+        if isinstance(other, KObj):
+            return b9(self) == b9(other)
+        return NotImplemented
 
 
 # constructors always take type t, optional context, and

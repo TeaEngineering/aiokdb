@@ -322,3 +322,8 @@ def test_mixed() -> None:
 
     k2 = kk(ks("function"), kj(17), ks("XBT"), kb(False))
     assert b9(k) == b9(k2)
+
+
+def test_equals() -> None:
+    assert kj(34) == kj(34)
+    assert kj(34) != kj(35)
