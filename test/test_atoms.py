@@ -295,6 +295,11 @@ def test_table_d9() -> None:
     # there is one row in this table
     assert len(t) == 1
 
+    # shortcuts
+    assert t.kS() == ["a", "b"]
+    assert t.kK()[0].kI() == array("l", [2])
+    assert t["b"].kI() == array("l", [3])
+
 
 def test_identity() -> None:
     k = d9(h2b("0x010000000a0000006500"))

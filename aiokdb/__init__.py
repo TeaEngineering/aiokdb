@@ -901,6 +901,21 @@ class KFlip(KObj):
         first_col = tdict_values.kK()[0]
         return len(first_col)
 
+    def __getitem__(self, item: str) -> KObj:
+        try:
+            idx = self.kS().index(item)
+            return self.kK()[idx]
+        except ValueError:
+            raise KeyError(f"Column not found {item}")
+
+    def kS(self) -> Sequence[str]:
+        # column names
+        return self.kvalue().kkey().kS()
+
+    def kK(self) -> MutableSequence[KObj]:
+        # column values
+        return self.kvalue().kvalue().kK()
+
 
 def krr(msg: str) -> KObj:
     return KSymAtom(TypeEnum.KRR).ss(msg)
