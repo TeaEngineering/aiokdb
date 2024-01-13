@@ -62,7 +62,15 @@ def test_format_dict() -> None:
 
 
 def test_format_atoms() -> None:
+    fmt = AsciiFormatter()
+
     p = ka(-TypeEnum.KP)
     p.j(1000000000)
-    fmt = AsciiFormatter()
     assert fmt.format(p) == "2000.01.01D00:00:01:000000000"
+
+    # square brackets to show the mixed-type nature of K-arrays
+    p = kk(kj(5), ks("hello"))
+    assert fmt.format(p) == "[5, hello]"
+
+    p = ktni(TypeEnum.KJ, *range(20))
+    assert fmt.format(p) == "0 1 ... 18 19"

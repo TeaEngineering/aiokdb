@@ -208,9 +208,6 @@ class AsciiFormatter:
             return str(obj.aG())
         elif obj.t == -TypeEnum.KN:
             return self._fmt_atom_n(obj.aJ())
-        elif obj.t == TypeEnum.K:
-            # how much of obj should we show?
-            return "KObj"
         elif obj.t == -TypeEnum.UU:
             return str(obj.aU())
         elif obj.t == -TypeEnum.KF:
@@ -219,6 +216,12 @@ class AsciiFormatter:
             return self._fmt_atom_p(obj.aJ())
 
         # vectors
+        elif obj.t == TypeEnum.K:
+            # sample the vector (first five?)
+            elems = list(self._select_rows(len(obj)))
+            ks = ", ".join([self._str_cell(obj, 0, r) for r in elems])
+            return f"[{ks}]"
+
         elif obj.t > 0 and obj.t < 20:
             # sample the vector (first five?)
             elems = list(self._select_rows(len(obj)))
