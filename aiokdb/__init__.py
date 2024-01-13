@@ -3,7 +3,7 @@ import enum
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
-from typing import Any, BinaryIO, Type, cast
+from typing import Any, BinaryIO, Type, Union, cast
 
 __all__ = [
     "b9",
@@ -258,6 +258,8 @@ class KObjAtom(KObj):
         sz: int = 0,
         attr: int = 0,
     ) -> None:
+        if t > 0 and t != TypeEnum.NIL:
+            raise ValueError(f"Not atomic type {t}")
         super().__init__(t, context)
         self.data: bytes = b"\x00" * ATOM_LENGTH[-self.t]
 
@@ -749,7 +751,7 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
 
 
 # atom constructors
-def ka(t: TypeEnum) -> KObj:
+def ka(t: Union[int, TypeEnum]) -> KObj:
     return KObjAtom(t)
 
 
