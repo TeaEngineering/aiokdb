@@ -30,7 +30,7 @@ class AsciiFormatter:
             return self._fmt_keyed_table(obj)
         elif obj.t == TypeEnum.XD:
             return self._fmt_dict(obj)
-        return repr(obj)
+        return self._fmt_inline(obj)
 
     def _fmt_unkeyed_table(self, obj: KObj) -> str:
         rowcount = self._table_conforms(obj)

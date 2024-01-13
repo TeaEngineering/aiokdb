@@ -56,7 +56,13 @@ def test_format_dict() -> None:
     assert fmt.format(d) == "3  | hi\n612| p\n6  | dog"
 
     d = xd(ktni(TypeEnum.KJ, 3, 612, 6), kk(kj(56), ks("xray"), ka(-TypeEnum.UU)))
-    fmt = AsciiFormatter()
     assert (
         fmt.format(d) == "3  | 56\n612| xray\n6  | 00000000-0000-0000-0000-000000000000"
     )
+
+
+def test_format_atoms() -> None:
+    p = ka(-TypeEnum.KP)
+    p.j(1000000000)
+    fmt = AsciiFormatter()
+    assert fmt.format(p) == "2000.01.01D00:00:01:000000000"

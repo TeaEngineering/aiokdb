@@ -289,7 +289,7 @@ class KObjAtom(KObj):
         return self
 
     def j(self, j: int) -> KObj:
-        if self.t not in [-TypeEnum.KJ]:
+        if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
             raise ValueError(f"wrong type {self._tn()} for j()")
         self.data = struct.pack("q", j)
         return self
@@ -316,7 +316,7 @@ class KObjAtom(KObj):
         return cast(int, struct.unpack("i", self.data)[0])
 
     def aJ(self) -> int:
-        if self.t not in [-TypeEnum.KJ]:
+        if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
             raise ValueError(f"wrong type {self._tn()} for aJ")
         return cast(int, struct.unpack("q", self.data)[0])
 
