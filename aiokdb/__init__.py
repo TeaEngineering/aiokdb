@@ -33,8 +33,20 @@ class MessageType(enum.IntEnum):
 
 
 class Nulls:
-    j: int = -9223372036854775808
+    h: int = -32768
     i: int = -2147483648
+    j: int = -9223372036854775808
+    c: str = " "
+    e: float = float("nan")
+    f: float = float("nan")
+
+
+class Infs:
+    h: int = 32767
+    i: int = 2147483647
+    j: int = 9223372036854775807
+    e: float = float("inf")
+    f: float = float("inf")
 
 
 class TypeEnum(enum.IntEnum):
@@ -146,6 +158,9 @@ class KObj:
         raise self._te()
 
     def b(self, b: bool) -> "KObj":
+        raise self._te()
+
+    def c(self, c: str) -> "KObj":
         raise self._te()
 
     def g(self, g: int) -> "KObj":
@@ -268,6 +283,15 @@ class KObjAtom(KObj):
         if self.t not in [-TypeEnum.KB]:
             raise ValueError(f"wrong type {self._tn()} for g()")
         self.data = struct.pack("B", {True: 1, False: 0}[b])
+        return self
+
+    def c(self, c: str) -> KObj:
+        bs = c.encode("ascii")
+        if self.t not in [-TypeEnum.KC]:
+            raise ValueError(f"wrong type {self._tn()} for c()")
+        if len(bs) != 1:
+            raise ValueError(".c() takes single character")
+        self.data = bs
         return self
 
     def g(self, g: int) -> KObj:
@@ -757,6 +781,10 @@ def ka(t: Union[int, TypeEnum]) -> KObj:
 
 def kb(b: bool) -> KObj:
     return KObjAtom(-TypeEnum.KB).b(b)
+
+
+def kc(c: str) -> KObj:
+    return KObjAtom(-TypeEnum.KC).c(c)
 
 
 def kg(i: int) -> KObj:

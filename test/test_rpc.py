@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 import pytest
 
-from aiokdb import TypeEnum, cv
+from aiokdb import Infs, Nulls, TypeEnum, cv
 from aiokdb.client import open_qipc_connection
 
 # test requires working KDB's eval in the server process, so can't use our python shim
@@ -78,3 +78,18 @@ async def test_rpc() -> None:
     # https://code.kx.com/q/basics/datatypes/#functions-iterators-derived-functions
     # q)type each({x+y};neg;-;\;+[;1];<>;,';+/;+\;prev;+/:;+\:;`f 2:`f,1)
     # 100 101 102 103 104 105 106 107 108 109 110 111 112h
+
+    # nulls
+    assert (await kwr.sync_req(cv("0Nh"))).aH() == Nulls.h
+    # assert (await kwr.sync_req(cv("0Ng"))).aU() == ku(Nulls.u)
+    assert (await kwr.sync_req(cv("0Ni"))).aI() == Nulls.i
+    assert (await kwr.sync_req(cv("0Nj"))).aJ() == Nulls.j
+    # assert (await kwr.sync_req(cv("0Ne"))).aE() == Nulls.e
+    # assert (await kwr.sync_req(cv("0Nf"))).aF() == Nulls.f
+
+    # infs
+    assert (await kwr.sync_req(cv("0Wh"))).aH() == Infs.h
+    assert (await kwr.sync_req(cv("0Wi"))).aI() == Infs.i
+    assert (await kwr.sync_req(cv("0Wj"))).aJ() == Infs.j
+    assert (await kwr.sync_req(cv("0We"))).aE() == Infs.e
+    assert (await kwr.sync_req(cv("0w"))).aF() == Infs.f

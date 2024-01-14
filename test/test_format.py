@@ -62,7 +62,7 @@ def test_format_dict() -> None:
 
 
 def test_format_atoms() -> None:
-    fmt = AsciiFormatter()
+    fmt = AsciiFormatter(height=8)
 
     p = ka(-TypeEnum.KP)
     p.j(1000000000)

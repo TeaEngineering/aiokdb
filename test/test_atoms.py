@@ -11,6 +11,7 @@ from aiokdb import (
     d9,
     ka,
     kb,
+    kc,
     kg,
     kh,
     ki,
@@ -55,6 +56,7 @@ def test_atoms_b9() -> None:
     assert b9(krr("ohno")) == h2b("0x010000000e000000806F686E6F00")
     assert b9(kb(False)) == h2b("0x010000000a000000ff00")
     assert b9(kb(True)) == h2b("0x010000000a000000ff01")
+    assert b9(kc(" ")) == h2b("0x010000000a000000f620")
 
 
 def test_atoms_d9b9() -> None:
@@ -64,6 +66,7 @@ def test_atoms_d9b9() -> None:
     assert d9(b9(kh(12))).aH() == 12
     assert d9(b9(ki(12))).aI() == 12
     assert d9(b9(kj(12))).aJ() == 12
+    assert d9(b9(kc(" "))).aC() == " "
 
 
 def test_atoms_d9() -> None:

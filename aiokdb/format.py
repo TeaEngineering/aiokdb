@@ -228,4 +228,9 @@ class AsciiFormatter:
             ks = " ".join([self._str_cell(obj, 0, r) for r in elems])
             return ks
 
+        elif obj.t == TypeEnum.XD:
+            return "KDict"
+        elif obj.t == TypeEnum.XT:
+            return "KTable"
+
         raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")
