@@ -112,22 +112,39 @@ class AsciiFormatter:
                 return "..."
             return ""
 
-        if obj.t == TypeEnum.KJ:
+        if obj.t == TypeEnum.KG or obj.t == TypeEnum.KB:
+            return str(obj.kG()[index])
+        elif obj.t == TypeEnum.KH:
+            i = obj.kH()[index]
+            if i == Nulls.h:
+                return ""
+            return str(i)
+        elif obj.t == TypeEnum.KI:
+            i = obj.kI()[index]
+            if i == Nulls.i:
+                return ""
+            return str(i)
+        elif obj.t == TypeEnum.KJ:
             j = obj.kJ()[index]
             if j == Nulls.j:
                 return ""
             if j == 9223372036854775807:
                 return "0W"
             return str(j)
-        elif obj.t == TypeEnum.KI:
-            i = obj.kI()[index]
-            if i == Nulls.i:
-                return ""
-            return str(i)
+        elif obj.t == TypeEnum.KM:
+            return self._fmt_atom_m(obj.kI()[index])
+        elif obj.t == TypeEnum.KD:
+            return self._fmt_atom_d(obj.kI()[index])
+        elif obj.t == TypeEnum.KZ:
+            return self._fmt_atom_z(obj.kF()[index])
+        elif obj.t == TypeEnum.KU:
+            return self._fmt_atom_u(obj.kI()[index])
+        elif obj.t == TypeEnum.KV:
+            return self._fmt_atom_v(obj.kI()[index])
+        elif obj.t == TypeEnum.KT:
+            return self._fmt_atom_t(obj.kI()[index])
         elif obj.t == TypeEnum.KS:
             return obj.kS()[index]
-        elif obj.t == TypeEnum.KG or obj.t == TypeEnum.KB:
-            return str(obj.kG()[index])
         elif obj.t == TypeEnum.KN:
             j = obj.kJ()[index]
             return self._fmt_atom_n(j)
@@ -137,6 +154,9 @@ class AsciiFormatter:
             return self._fmt_inline(o)
         elif obj.t == TypeEnum.UU:
             return str(obj.kU()[index])
+        elif obj.t == TypeEnum.KE:
+            e = obj.kE()[index]
+            return str(e)
         elif obj.t == TypeEnum.KF:
             return str(obj.kF()[index])
         elif obj.t == TypeEnum.KP:
@@ -172,6 +192,53 @@ class AsciiFormatter:
         h = h % 24
         return f"{d}D{h:02}:{m:02}:{secs:02}.{nanos:09}"
 
+    def _fmt_atom_m(self, m: int) -> str:
+        if m == Nulls.i:
+            return "0Nm"
+        return f"{m/12:04}.{m%12:02}m"
+
+    def _fmt_atom_d(self, d: int) -> str:
+        if d == Nulls.i:
+            return "0Nd"
+        origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
+        dt = datetime.utcfromtimestamp(origin + d)
+        return dt.strftime("%Y.%m.%d")
+
+    def _fmt_atom_z(self, d: float) -> str:
+        if d == Nulls.f:
+            return "0Nz"
+        origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
+        dt = datetime.utcfromtimestamp(origin + d)
+        return dt.strftime("%Y.%m.%dT%H:%M:%S:%f")
+
+    def _fmt_atom_u(self, u: int) -> str:
+        if u == Nulls.i:
+            return "0Nu"
+        # TODO: formatting >1h etc
+        return f"{u/60:02}:{u%60:02}"
+
+    def _fmt_atom_v(self, v: int) -> str:
+        if v == Nulls.i:
+            return "0Nv"
+        h = v / 3600
+        m = (v / 60) % 60
+        s = v % 60
+        return f"{h:02}:{m:02}:{s:02}"
+
+    def _fmt_atom_t(self, t: int) -> str:
+        if t == Nulls.i:
+            return "ONt"
+        # timespan in nanos
+        secs = t // 1000000000
+        m = secs // 60
+        h = m // 60
+        d = h // 24
+        nanos = t % 1000000000
+        secs = secs % 60
+        m = m % 60
+        h = h % 24
+        return f"{d}D{h:02}:{m:02}:{secs:02}.{nanos:09}"
+
     def _fmt_dict(self, obj: KObj) -> str:
         # measure the keys
         rows = list(self._select_rows(len(obj)))
@@ -201,13 +268,33 @@ class AsciiFormatter:
             i = obj.aI()
             if i == Nulls.i:
                 return ""
-            return str(i)
+            return str(i) + "i"
+        elif obj.t == -TypeEnum.KH:
+            i = obj.aH()
+            return str(i) + "h"
+        elif obj.t == -TypeEnum.KE:
+            e = obj.aE()
+            return str(e) + "e"
         elif obj.t == -TypeEnum.KS:
             return obj.aS()
+        elif obj.t == -TypeEnum.KC:
+            return f'"{obj.aC()}"'
         elif obj.t == -TypeEnum.KG or obj.t == -TypeEnum.KB:
             return str(obj.aG())
         elif obj.t == -TypeEnum.KN:
             return self._fmt_atom_n(obj.aJ())
+        elif obj.t == -TypeEnum.KM:
+            return self._fmt_atom_m(obj.aI())
+        elif obj.t == -TypeEnum.KD:
+            return self._fmt_atom_d(obj.aI())
+        elif obj.t == -TypeEnum.KZ:
+            return self._fmt_atom_z(obj.aF())
+        elif obj.t == -TypeEnum.KU:
+            return self._fmt_atom_u(obj.aI())
+        elif obj.t == -TypeEnum.KV:
+            return self._fmt_atom_v(obj.aI())
+        elif obj.t == -TypeEnum.KT:
+            return self._fmt_atom_t(obj.aI())
         elif obj.t == -TypeEnum.UU:
             return str(obj.aU())
         elif obj.t == -TypeEnum.KF:
@@ -232,5 +319,7 @@ class AsciiFormatter:
             return "KDict"
         elif obj.t == TypeEnum.XT:
             return "KTable"
+        elif obj.t == TypeEnum.NIL:
+            return "::"
 
         raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")

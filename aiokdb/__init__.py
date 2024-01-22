@@ -228,6 +228,9 @@ class KObj:
     def kJ(self) -> MutableSequence[int]:
         raise self._te()
 
+    def kE(self) -> MutableSequence[float]:
+        raise self._te()
+
     def kF(self) -> MutableSequence[float]:
         raise self._te()
 
@@ -335,12 +338,19 @@ class KObjAtom(KObj):
         return cast(int, struct.unpack("h", self.data)[0])
 
     def aI(self) -> int:
-        if self.t not in [-TypeEnum.KI]:
+        if self.t not in [
+            -TypeEnum.KI,
+            -TypeEnum.KM,
+            -TypeEnum.KD,
+            -TypeEnum.KU,
+            -TypeEnum.KV,
+            -TypeEnum.KT,
+        ]:
             raise ValueError(f"wrong type {self._tn()} for aI")
         return cast(int, struct.unpack("i", self.data)[0])
 
     def aJ(self) -> int:
-        if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
+        if self.t not in [-TypeEnum.KJ, -TypeEnum.KP, -TypeEnum.KN]:
             raise ValueError(f"wrong type {self._tn()} for aJ")
         return cast(int, struct.unpack("q", self.data)[0])
 
@@ -355,7 +365,7 @@ class KObjAtom(KObj):
         return cast(float, struct.unpack("f", self.data)[0])
 
     def aF(self) -> float:
-        if self.t not in [-TypeEnum.KF]:
+        if self.t not in [-TypeEnum.KF, -TypeEnum.KZ]:
             raise ValueError(f"wrong type {self._tn()} for aF")
         return cast(float, struct.unpack("d", self.data)[0])
 
@@ -613,7 +623,7 @@ class KFloatArray(KRangedType):
             f"<{len(self._e)}f", *self._e
         )
 
-    def kF(self) -> MutableSequence[float]:
+    def kE(self) -> MutableSequence[float]:
         return self._e
 
     def __len__(self) -> int:
