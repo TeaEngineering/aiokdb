@@ -12,13 +12,13 @@ This library takes a different approach and aims to replicate using the KDB C-li
 A simple example:
 
 ```python
-from aiokdb import khpu
+from aiokdb.socket import khpu
 # run ./q -p 12345 &
 
 h = khpu("localhost", 12345, "kdb:pass")
-result = h.k("2.0+3.0", None) # None can be used where C expects (K)0
+result = h.k("2.0+3.0")
 
-# if the remote returns a Q Exception, this gets raised, unless k(..., raise=False)
+# if the remote returns a Q Exception, this gets raised, unless khpu(..., raise_krr=False)
 assert result.aF() == 5.0
 ````
 
