@@ -1,9 +1,11 @@
 import argparse
 import asyncio
 import logging
+import os
 import traceback
 from typing import Any
 
+from prompt_toolkit.history import FileHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import PromptSession
 
@@ -17,8 +19,9 @@ async def main(args: Any) -> None:
         host=args.host, port=args.port, user=args.user, password=args.password
     )
 
-    session: Any = PromptSession("(eval) > ")
-    fmt = AsciiFormatter()
+    history = FileHistory(os.path.expanduser("~/.aiokdb-cli-history"))
+    session: Any = PromptSession("(eval) > ", history=history)
+    fmt = AsciiFormatter(height=args.height)
 
     # Run echo loop. Read text from stdin, and reply it back.
     while True:
@@ -46,6 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", default=8890, type=int)
     parser.add_argument("--user", default="user")
     parser.add_argument("--password")
+    parser.add_argument("--height", default=10, type=int)
     args = parser.parse_args()
 
     with patch_stdout():
