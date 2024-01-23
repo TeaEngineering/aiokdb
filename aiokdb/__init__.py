@@ -780,6 +780,10 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
     elif t == TypeEnum.XT:
         kkeys, offset = _d9_unpackfrom(data, offset + 1)
         return KFlip(kkeys), offset
+    elif t == TypeEnum.SD:
+        kkeys, offset = _d9_unpackfrom(data, offset)
+        kvalues, offset = _d9_unpackfrom(data, offset)
+        return KDict(kkeys, kvalues, t), offset
 
     raise ValueError(f"Unable to d9 unpack t={t}")
 

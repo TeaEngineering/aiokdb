@@ -78,6 +78,7 @@ async def test_rpc() -> None:
 
     await check_result("`a`b`c!(1 2;3 5;7 11)", TypeEnum.XD)
     await check_result("flip `a`b`c!(1 2;3 5;7 11)", TypeEnum.XT)
+    await check_result("`s#4 5 6!6 5 4", TypeEnum.SD)
 
     # fancy
     await check_result("::", TypeEnum.NIL)
