@@ -32,7 +32,7 @@ Serialisation is handled by `b9` which returns a python bytes, and `d9` which ta
 * Lists with `ktn` and `knk`
 * Dictionaries with `xd` and tables with `xt`.
 
-Python manages garbage colleciton of our objects, so none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` have no equivelent.
+Python manages garbage collection, none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` are absent.
 
 ## RPC
 
