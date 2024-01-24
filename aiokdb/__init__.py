@@ -1,5 +1,6 @@
 import array
 import enum
+import logging
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
@@ -12,6 +13,8 @@ __all__ = [
 ]
 
 # mypy: disallow-untyped-defs
+
+logger = logging.getLogger(__name__)
 
 
 class WrongTypeForOperationError(TypeError):
@@ -762,7 +765,7 @@ def d9(data: bytes) -> KObj:
 def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
-    print(f" at offset {offset} unpacking type {tn(t)}")
+    logger.debug(f" at offset {offset}/{len(data)} unpacking type {tn(t)}")
     if t == -TypeEnum.KS or t == TypeEnum.KRR:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:

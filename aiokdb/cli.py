@@ -42,15 +42,16 @@ async def main(args: Any) -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", default=8890, type=int)
     parser.add_argument("--user", default="user")
     parser.add_argument("--password")
     parser.add_argument("--height", default=10, type=int)
-    args = parser.parse_args()
+    parser.add_argument("--debug", action="store_true")
 
+    args = parser.parse_args()
+    debug_level = {True: logging.DEBUG, False: logging.INFO}
+    logging.basicConfig(level=debug_level[args.debug])
     with patch_stdout():
         asyncio.run(main(args))

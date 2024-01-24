@@ -4,7 +4,7 @@ import logging
 import struct
 from typing import Any, Optional
 
-from aiokdb import cv
+from aiokdb import cv, logger
 from aiokdb.server import CredentialsException, KdbReader, KdbWriter
 
 
@@ -29,10 +29,10 @@ async def open_qipc_connection(
 
     try:
         data = await reader.readexactly(1)  # negotiated version, if auth correct
-        logging.info(f"Received: {data!r}")
         remote_ver = struct.unpack("<B", data)[0]
         if remote_ver != ver:
             raise Exception(f"expected version {ver}, server gave {remote_ver}")
+        logger.debug(f"Connected OK, remote_ver={remote_ver}")
     except asyncio.IncompleteReadError as e:
         raise CredentialsException(e)
 

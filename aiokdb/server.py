@@ -7,7 +7,7 @@ import struct
 from functools import partial
 from typing import Any, Callable, Optional, Tuple
 
-from aiokdb import KException, KObj, MessageType, TypeEnum, b9, d9, krr
+from aiokdb import KException, KObj, MessageType, TypeEnum, b9, d9, krr, logger
 
 
 class CredentialsException(Exception):
@@ -26,7 +26,9 @@ class KdbReader:
     async def read(self) -> tuple[MessageType, KObj]:
         msgh = await self.reader.readexactly(8)
         ver, msgtype, flags, msglen = struct.unpack("<BBHI", msgh)
-        print(f"> recv ver={ver} msgtype={msgtype} flags={flags} msglen={msglen}")
+        logger.debug(
+            f"> recv ver={ver} msgtype={msgtype} flags={flags} msglen={msglen}"
+        )
         payload = await self.reader.readexactly(msglen - 8)
         # TODO: if compressed, decompress payload
         if flags != 0:
@@ -53,7 +55,7 @@ class KdbWriter:
 
     def write(self, obj: KObj, mt: MessageType = MessageType.SYNC) -> None:
         bs = b9(obj, msgtype=mt)
-        print(f"< sending {bs!r}")
+        logger.debug(f"< sending {bs!r}")
         self.writer.write(bs)
 
     async def sync_req(self, obj: KObj, ooob: OptKcb = None) -> KObj:
