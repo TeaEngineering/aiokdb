@@ -57,7 +57,7 @@ $
 The unit tests in `test/test_rpc.py` will use a real KDB binary to test against (over RPC) if you set `KDB_PYTEST_SERVICE` to a URL of the form `kdb://user:password@hostname:port`, otherwise that test is skipped and they are self contained.
 
 * Formatting with `ruff check .`
-* Formatting with `black .`
+* Formatting with `ruff format .`
 * imports `isort --check --profile black .`
 * Check type annotations with `mypy --strict .`
 * Run `pytest .` in the root directory

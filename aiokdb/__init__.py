@@ -126,6 +126,8 @@ def tn(t: int) -> str:
     te = t
     if te != TypeEnum.KRR:
         te = abs(t)
+    if te >= 20 and te < 40:
+        return "Enum ({t})"
     return f"{TypeEnum(te).name} ({t})"
 
 
@@ -787,7 +789,8 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
         kkeys, offset = _d9_unpackfrom(data, offset)
         kvalues, offset = _d9_unpackfrom(data, offset)
         return KDict(kkeys, kvalues, t), offset
-
+    elif t >= 20 and t < 30:
+        return VECTOR_CONSTUCTORS[TypeEnum.KJ](t).frombytes(data, offset)
     raise ValueError(f"Unable to d9 unpack t={t}")
 
 
