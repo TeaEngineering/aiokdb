@@ -1001,3 +1001,8 @@ def fromfile(f: BinaryIO) -> KObj:
     assert rb[0:2] == b"\xff\x01"
     k, _ = _d9_unpackfrom(rb, 2)
     return k
+
+
+def writefile(k: KObj, f: BinaryIO) -> None:
+    f.write(b"\xff\x01")
+    f.write(k._databytes())
