@@ -180,6 +180,9 @@ class KObj:
     def j(self, j: int) -> "KObj":
         raise self._te()
 
+    def uu(self, uu: uuid.UUID) -> "KObj":
+        raise self._te()
+
     # atom getters
     def aB(self) -> bool:
         raise self._te()
@@ -324,6 +327,12 @@ class KObjAtom(KObj):
         if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
             raise ValueError(f"wrong type {self._tn()} for j()")
         self.data = struct.pack("q", j)
+        return self
+
+    def uu(self, uu: uuid.UUID) -> KObj:
+        if self.t not in [-TypeEnum.UU]:
+            raise ValueError(f"wrong type {self._tn()} for uu()")
+        self.data = uu.bytes
         return self
 
     # atom getters
@@ -827,6 +836,10 @@ def ks(s: str) -> KObj:
     return KSymAtom(-TypeEnum.KS).ss(s)
 
 
+def kuu(uu: uuid.UUID) -> KObj:
+    return KObjAtom(-TypeEnum.UU).uu(uu)
+
+
 # vector constructors
 VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
     TypeEnum.K: KObjArray,
@@ -979,6 +992,9 @@ class KFlip(KObj):
 
 def krr(msg: str) -> KObj:
     return KSymAtom(TypeEnum.KRR).ss(msg)
+
+
+kNil = ka(TypeEnum.NIL)
 
 
 class KException(Exception):
