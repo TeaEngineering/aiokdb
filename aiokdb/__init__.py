@@ -4,7 +4,7 @@ import logging
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
-from typing import Any, BinaryIO, Type, Union, cast
+from typing import Any, Type, Union, cast
 
 __all__ = [
     "b9",
@@ -1009,16 +1009,3 @@ def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
 
 def xt(kd: KDict, sorted: bool = False) -> KFlip:
     return KFlip(kd, sorted=sorted)
-
-
-def fromfile(f: BinaryIO) -> KObj:
-    # theres no length header since files have a size
-    rb = f.read()
-    assert rb[0:2] == b"\xff\x01"
-    k, _ = _d9_unpackfrom(rb, 2)
-    return k
-
-
-def writefile(k: KObj, f: BinaryIO) -> None:
-    f.write(b"\xff\x01")
-    f.write(k._databytes())
