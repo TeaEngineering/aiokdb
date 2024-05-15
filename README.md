@@ -58,7 +58,6 @@ The unit tests in `test/test_rpc.py` will use a real KDB binary to test against 
 
 * Formatting with `ruff check .`
 * Formatting with `ruff format .`
-* imports `isort --check --profile black .`
 * Check type annotations with `mypy --strict .`
 * Run `pytest .` in the root directory
 
