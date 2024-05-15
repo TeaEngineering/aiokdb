@@ -8,6 +8,7 @@ from aiokdb import (
     AttrEnum,
     TypeEnum,
     b9,
+    cv,
     d9,
     ka,
     kb,
@@ -334,3 +335,41 @@ def test_mixed() -> None:
 def test_equals() -> None:
     assert kj(34) == kj(34)
     assert kj(34) != kj(35)
+
+
+def test_table_uuid_str_column() -> None:
+    # x:([envelope_id:"G"$("2d948578-e9d6-79a2-8207-9df7a71f0b3b";"409031f3-b19c-6770-ee84-6e9369c98697")]payload:("abc";"xy");time:2024.05.14D23:13:19.044908000)
+    # envelope_id                         | payload time
+    # ------------------------------------| -------------------------------------
+    # 2d948578-e9d6-79a2-8207-9df7a71f0b3b| "abc"   2024.05.14D23:13:19.044908000
+    # 409031f3-b19c-6770-ee84-6e9369c98697| "xy"    2024.05.14D23:13:19.044908000
+    # -8!x
+    exp = h2b(
+        "0x0100000093000000636200630b0001000000656e76656c6f70655f6964000000010000000200020000002d948578e9d679a282079df7a71f0b3b409031f3b19c6770ee846e9369c986976200630b00020000007061796c6f61640074696d65000000020000000000020000000a00030000006162630a000200000078790c0002000000e013dc291431ac0ae013dc291431ac0a"
+    )
+
+    # keyed table
+    # dictionary with tables for keys and values
+    key_hdr = ktn(TypeEnum.KS).appendS("envelope_id")
+    key_val = ktn(TypeEnum.K)
+    key_val.kK().append(ktn(TypeEnum.UU))
+
+    val_hdr = ktn(TypeEnum.KS).appendS("payload", "time")
+    val_val = ktn(TypeEnum.K)
+    val_val.kK().append(ktn(TypeEnum.K))
+    val_val.kK().append(ktn(TypeEnum.KP))
+    kt = xd(xt(xd(key_hdr, key_val)), xt(xd(val_hdr, val_val)))
+
+    # add items
+    kt.kkey()["envelope_id"].kU().append(
+        uuid.UUID("2d948578-e9d6-79a2-8207-9df7a71f0b3b")
+    )
+    kt.kvalue()["payload"].kK().append(cv("abc"))
+    kt.kvalue()["time"].kJ().append(769043599044908000)
+
+    kt.kkey()["envelope_id"].kU().append(
+        uuid.UUID("409031f3-b19c-6770-ee84-6e9369c98697")
+    )
+    kt.kvalue()["payload"].kK().append(cv("xy"))
+    kt.kvalue()["time"].kJ().append(769043599044908000)
+    assert b9(kt).hex() == exp.hex()

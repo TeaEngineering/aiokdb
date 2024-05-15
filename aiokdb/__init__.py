@@ -728,13 +728,13 @@ class KObjArray(KRangedType):
 
 
 class KUUIDArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.UU) -> None:
+    def __init__(self, t: int = TypeEnum.UU, sz: int = 0, attr: int = 0) -> None:
         super().__init__(TypeEnum.UU)
         self._u: list[uuid.UUID] = []
 
     def _paysz(self) -> int:
         # sum sizes nested ks
-        return 2 + 4 + 8 * len(self._u)
+        return 2 + 4 + 16 * len(self._u)
 
     def _databytes(self) -> bytes:
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self._u))]
