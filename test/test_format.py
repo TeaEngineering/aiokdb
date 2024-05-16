@@ -1,4 +1,6 @@
-from aiokdb import TypeEnum, d9, ka, kj, kk, ks, ktn, xd, xt
+import uuid
+
+from aiokdb import TypeEnum, cv, d9, ka, kj, kk, ks, ktn, xd, xt
 from aiokdb.extras import ktni, ktns
 from aiokdb.format import AsciiFormatter
 
@@ -48,6 +50,29 @@ def test_format_keyed_table() -> None:
     )
     fmt = AsciiFormatter()
     assert fmt.format(t) == expected
+
+
+def test_format_keyed_table_nested_str() -> None:
+    expected = "envelope_id                         | payload time                         \n------------------------------------|--------------------------------------\n2d948578-e9d6-79a2-8207-9df7a71f0b3b| abc     2024.05.14D23:13:19:044908000\n409031f3-b19c-6770-ee84-6e9369c98697| xy      2024.05.14D23:13:19:044908000"
+    # keyed table
+    # dictionary with tables for keys and values
+    key_hdr = ktns(TypeEnum.KS, "envelope_id")
+    key_val = kk(ktn(TypeEnum.UU))
+
+    val_hdr = ktns(TypeEnum.KS, "payload", "time")
+    val_val = kk(ktn(TypeEnum.K), ktn(TypeEnum.KP))
+    kt = xd(xt(xd(key_hdr, key_val)), xt(xd(val_hdr, val_val)))
+
+    kt.kkey()["envelope_id"].kU().extend(
+        [
+            uuid.UUID("2d948578-e9d6-79a2-8207-9df7a71f0b3b"),
+            uuid.UUID("409031f3-b19c-6770-ee84-6e9369c98697"),
+        ]
+    )
+    kt.kvalue()["payload"].kK().extend([cv("abc"), cv("xy")])
+    kt.kvalue()["time"].kJ().extend([769043599044908000, 769043599044908000])
+
+    assert AsciiFormatter().format(kt) == expected
 
 
 def test_format_dict() -> None:

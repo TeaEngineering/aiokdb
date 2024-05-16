@@ -730,7 +730,7 @@ class KObjArray(KRangedType):
 class KUUIDArray(KRangedType):
     def __init__(self, t: int = TypeEnum.UU, sz: int = 0, attr: int = 0) -> None:
         super().__init__(TypeEnum.UU)
-        self._u: list[uuid.UUID] = []
+        self._u: list[uuid.UUID] = [uuid.UUID(int=0)] * sz
 
     def _paysz(self) -> int:
         # sum sizes nested ks

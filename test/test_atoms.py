@@ -24,7 +24,7 @@ from aiokdb import (
     xd,
     xt,
 )
-from aiokdb.extras import ktni
+from aiokdb.extras import ktni, ktns
 
 
 def h2b(hx: str) -> bytes:
@@ -128,6 +128,12 @@ def test_vector_b9() -> None:
     k.kC().fromunicode("2+2")
     assert b9(k) == h2b("0x01000000110000000a0003000000322b32")
 
+    # -8!2#0Ng
+    k = ktn(TypeEnum.UU, sz=2)
+    assert b9(k) == h2b(
+        "0x010000002e0000000200020000000000000000000000000000000000000000000000000000000000000000000000"
+    )
+
 
 def test_vector_d9() -> None:
     # assert d9(h2b("0x010000001200000001000400000000010100")).kB() == [False, True, True, False]
@@ -170,6 +176,10 @@ def test_vector_d9() -> None:
         uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
         uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
     ]
+
+    x = d9(h2b("0x010000001a000000000002000000000000000000000000000000"))
+    assert len(x.kK()) == 2
+    assert x.kK()[0].kK() == []
 
 
 def test_overflows_KG() -> None:
@@ -350,14 +360,11 @@ def test_table_uuid_str_column() -> None:
 
     # keyed table
     # dictionary with tables for keys and values
-    key_hdr = ktn(TypeEnum.KS).appendS("envelope_id")
-    key_val = ktn(TypeEnum.K)
-    key_val.kK().append(ktn(TypeEnum.UU))
+    key_hdr = ktns(TypeEnum.KS, "envelope_id")
+    key_val = kk(ktn(TypeEnum.UU))
 
-    val_hdr = ktn(TypeEnum.KS).appendS("payload", "time")
-    val_val = ktn(TypeEnum.K)
-    val_val.kK().append(ktn(TypeEnum.K))
-    val_val.kK().append(ktn(TypeEnum.KP))
+    val_hdr = ktns(TypeEnum.KS, "payload", "time")
+    val_val = kk(ktn(TypeEnum.K), ktn(TypeEnum.KP))
     kt = xd(xt(xd(key_hdr, key_val)), xt(xd(val_hdr, val_val)))
 
     # add items

@@ -308,6 +308,9 @@ class AsciiFormatter:
             elems = list(self._select_rows(len(obj)))
             ks = ", ".join([self._str_cell(obj, 0, r) for r in elems])
             return f"[{ks}]"
+        elif obj.t == TypeEnum.KC:
+            elems = list(self._select_rows(len(obj)))
+            return "".join([self._str_cell(obj, 0, r) for r in elems])
 
         elif obj.t > 0 and obj.t < 20:
             # sample the vector (first five?)
