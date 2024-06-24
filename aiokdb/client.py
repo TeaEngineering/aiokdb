@@ -10,12 +10,12 @@ from aiokdb.server import CredentialsException, KdbReader, KdbWriter
 
 # KDB client code
 async def open_qipc_connection(
-    host: str = "127.0.0.1",
-    port: int = 8890,
-    user: Optional[str] = None,
-    password: Optional[str] = None,
-    ver: int = 3,
-) -> tuple[KdbReader, KdbWriter]:
+    host="127.0.0.1",
+    port=8890,
+    user=None,
+    password=None,
+    ver=3,
+):
     reader, writer = await asyncio.open_connection(host, port)
 
     auth = ""
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument("--password")
     args = parser.parse_args()
 
-    async def main(args: Any) -> None:
+    async def main(args):
         r, w = await open_qipc_connection(
             host=args.host, port=args.port, user=args.user, password=args.password
         )

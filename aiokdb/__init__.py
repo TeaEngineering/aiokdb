@@ -1,10 +1,10 @@
 import array
-import enum
 import logging
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
-from typing import Any, Type, Union, cast
+
+from .enum import IntEnum
 
 __all__ = [
     "b9",
@@ -21,7 +21,7 @@ class WrongTypeForOperationError(TypeError):
     pass
 
 
-class AttrEnum(enum.IntEnum):
+class AttrEnum(IntEnum):
     NONE = 0
     SORTED = 1
     UNIQUE = 2
@@ -29,30 +29,30 @@ class AttrEnum(enum.IntEnum):
     GROUPED = 4
 
 
-class MessageType(enum.IntEnum):
+class MessageType(IntEnum):
     ASYNC = 0
     SYNC = 1
     RESPONSE = 2
 
 
 class Nulls:
-    h: int = -32768
-    i: int = -2147483648
-    j: int = -9223372036854775808
-    c: str = " "
-    e: float = float("nan")
-    f: float = float("nan")
+    h = -32768
+    i = -2147483648
+    j = -9223372036854775808
+    c = " "
+    e = float("nan")
+    f = float("nan")
 
 
 class Infs:
-    h: int = 32767
-    i: int = 2147483647
-    j: int = 9223372036854775807
-    e: float = float("inf")
-    f: float = float("inf")
+    h = 32767
+    i = 2147483647
+    j = 9223372036854775807
+    e = float("inf")
+    f = float("inf")
 
 
-class TypeEnum(enum.IntEnum):
+class TypeEnum(IntEnum):
     #    type bytes qtype     ctype  accessor
     K = 0  #   *    K         K
     KB = 1  #  1    boolean   char   kG
@@ -82,7 +82,7 @@ class TypeEnum(enum.IntEnum):
 
 
 # Remember to special case TypeEnum.KS and TypeEnum.K
-ATOM_LENGTH: dict[int, int] = {
+ATOM_LENGTH = {
     TypeEnum.KB: 1,
     TypeEnum.UU: 16,
     TypeEnum.KG: 1,
@@ -105,11 +105,11 @@ ATOM_LENGTH: dict[int, int] = {
 
 
 class KContext:
-    def __init__(self) -> None:
-        self.symbols: dict[str, int] = {}
-        self.symbols_enc: dict[int, tuple[str, bytes]] = {}
+    def __init__(self):
+        self.symbols = {}
+        self.symbols_enc = {}
 
-    def ss(self, s: str) -> int:
+    def ss(self, s):
         # we don't want any surprises trying to serialise non-ascii symbols later
         # so force non-ascii characters out now
         bs = bytes(s, "ascii") + b"\x00"
@@ -122,152 +122,152 @@ class KContext:
 DEFAULT_CONTEXT = KContext()
 
 
-def tn(t: int) -> str:
+def tn(t):
     te = t
     if te != TypeEnum.KRR:
         te = abs(t)
     if te >= 20 and te < 40:
         return "Enum ({t})"
-    return f"{TypeEnum(te).name} ({t})"
+    return "{0} ({1})".format(TypeEnum(te).name, t)
 
 
 class KObj:
     def __init__(
         self,
-        t: int = 0,
-        context: KContext = DEFAULT_CONTEXT,
-        sz: int = 0,
-        attr: int = 0,
-    ) -> None:
+        t=0,
+        context=DEFAULT_CONTEXT,
+        sz=0,
+        attr=0,
+    ):
         self.t = t
         self.attrib = attr
-        self.context: KContext = context
+        self.context = context
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 1
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<b", self.t)
 
-    def _tn(self) -> str:
+    def _tn(self):
         return tn(self.t)
 
-    def _te(self) -> Exception:
-        return WrongTypeForOperationError(f"Not available for {self._tn()}")
+    def _te(self):
+        return WrongTypeForOperationError("Not available for {0}".format(self._tn()))
 
-    def __len__(self) -> int:
+    def __len__(self):
         raise self._te()
 
     # atom setters
-    def ss(self, s: str) -> "KObj":
+    def ss(self, s):
         raise self._te()
 
-    def b(self, b: bool) -> "KObj":
+    def b(self, b):
         raise self._te()
 
-    def c(self, c: str) -> "KObj":
+    def c(self, c):
         raise self._te()
 
-    def g(self, g: int) -> "KObj":
+    def g(self, g):
         raise self._te()
 
-    def h(self, h: int) -> "KObj":
+    def h(self, h):
         raise self._te()
 
-    def i(self, i: int) -> "KObj":
+    def i(self, i):
         raise self._te()
 
-    def j(self, j: int) -> "KObj":
+    def j(self, j):
         raise self._te()
 
-    def uu(self, uu: uuid.UUID) -> "KObj":
+    def uu(self, uu):
         raise self._te()
 
     # atom getters
-    def aB(self) -> bool:
+    def aB(self):
         raise self._te()
 
-    def aG(self) -> int:
+    def aG(self):
         raise self._te()
 
-    def aI(self) -> int:
+    def aI(self):
         raise self._te()
 
-    def aH(self) -> int:
+    def aH(self):
         raise self._te()
 
-    def aJ(self) -> int:
+    def aJ(self):
         raise self._te()
 
-    def aS(self) -> str:
+    def aS(self):
         raise self._te()
 
-    def aU(self) -> uuid.UUID:
+    def aU(self):
         raise self._te()
 
-    def aE(self) -> float:
+    def aE(self):
         raise self._te()
 
-    def aF(self) -> float:
+    def aF(self):
         raise self._te()
 
-    def aC(self) -> str:
+    def aC(self):
         raise self._te()
 
     # vector getters
-    def kK(self) -> MutableSequence["KObj"]:
+    def kK(self):
         raise self._te()
 
-    def kU(self) -> MutableSequence[uuid.UUID]:
+    def kU(self):
         raise self._te()
 
-    def kB(self) -> MutableSequence[bool]:
+    def kB(self):
         raise self._te()
 
-    def kG(self) -> MutableSequence[int]:
+    def kG(self):
         raise self._te()
 
-    def kH(self) -> MutableSequence[int]:
+    def kH(self):
         raise self._te()
 
-    def kI(self) -> MutableSequence[int]:
+    def kI(self):
         raise self._te()
 
-    def kJ(self) -> MutableSequence[int]:
+    def kJ(self):
         raise self._te()
 
-    def kE(self) -> MutableSequence[float]:
+    def kE(self):
         raise self._te()
 
-    def kF(self) -> MutableSequence[float]:
+    def kF(self):
         raise self._te()
 
-    def kC(self) -> array.array:  # type: ignore[type-arg]
+    def kC(self):  # type: ignore[type-arg]
         raise self._te()
 
-    def kS(self) -> Sequence[str]:
+    def kS(self):
         raise self._te()
 
     # dictionary/flip
-    def kkey(self) -> "KObj":
+    def kkey(self):
         raise self._te()
 
-    def kvalue(self) -> "KObj":
+    def kvalue(self):
         raise self._te()
 
-    def __getitem__(self, item: str) -> "KObj":
+    def __getitem__(self, item):
         raise self._te()
 
     # TODO: clean this up by having kS() return a MutableSequence(str) that
     # writes through to the int array
-    def appendS(self, *ss: str) -> "KObj":
+    def appendS(self, *ss):
         raise self._te()
 
     # deserialise content from stream
-    def frombytes(self, data: bytes, offset: int) -> tuple["KObj", int]:
+    def frombytes(self, data, offset):
         raise self._te()
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other):
         # this could be optimised in subclasses with appropriate descent logic
         if isinstance(other, KObj):
             return b9(self) == b9(other)
@@ -279,79 +279,79 @@ class KObj:
 class KObjAtom(KObj):
     def __init__(
         self,
-        t: int = 0,
-        context: KContext = DEFAULT_CONTEXT,
-        sz: int = 0,
-        attr: int = 0,
-    ) -> None:
+        t=0,
+        context=DEFAULT_CONTEXT,
+        sz=0,
+        attr=0,
+    ):
         if t > 0 and t != TypeEnum.NIL:
-            raise ValueError(f"Not atomic type {t}")
+            raise ValueError("Not atomic type {0}".format(t))
         super().__init__(t, context)
-        self.data: bytes = b"\x00" * ATOM_LENGTH[-self.t]
+        self.data = b"\x00" * ATOM_LENGTH[-self.t]
 
     # atom setters
-    def b(self, b: bool) -> KObj:
+    def b(self, b):
         if self.t not in [-TypeEnum.KB]:
-            raise ValueError(f"wrong type {self._tn()} for g()")
+            raise ValueError("wrong type {0} for g()".format(self._tn()))
         self.data = struct.pack("B", {True: 1, False: 0}[b])
         return self
 
-    def c(self, c: str) -> KObj:
+    def c(self, c):
         bs = c.encode("ascii")
         if self.t not in [-TypeEnum.KC]:
-            raise ValueError(f"wrong type {self._tn()} for c()")
+            raise ValueError("wrong type {0} for c()".format(self._tn()))
         if len(bs) != 1:
             raise ValueError(".c() takes single character")
         self.data = bs
         return self
 
-    def g(self, g: int) -> KObj:
+    def g(self, g):
         if self.t not in [-TypeEnum.KG]:
-            raise ValueError(f"wrong type {self._tn()} for g()")
+            raise ValueError("wrong type {0} for g()".format(self._tn()))
         self.data = struct.pack("B", g)
         return self
 
-    def h(self, h: int) -> KObj:
+    def h(self, h):
         if self.t not in [-TypeEnum.KH]:
-            raise ValueError(f"wrong type {self._tn()} for h()")
+            raise ValueError("wrong type {0} for h()".format(self._tn()))
         self.data = struct.pack("h", h)
         return self
 
-    def i(self, i: int) -> KObj:
+    def i(self, i):
         if self.t not in [-TypeEnum.KI]:
-            raise ValueError(f"wrong type {self._tn()} for i()")
+            raise ValueError("wrong type {0} for i()".format(self._tn()))
         self.data = struct.pack("i", i)
         return self
 
-    def j(self, j: int) -> KObj:
+    def j(self, j):
         if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
-            raise ValueError(f"wrong type {self._tn()} for j()")
+            raise ValueError("wrong type {0} for j()".format(self._tn()))
         self.data = struct.pack("q", j)
         return self
 
-    def uu(self, uu: uuid.UUID) -> KObj:
+    def uu(self, uu):
         if self.t not in [-TypeEnum.UU]:
-            raise ValueError(f"wrong type {self._tn()} for uu()")
+            raise ValueError("wrong type {0} for uu()".format(self._tn()))
         self.data = uu.bytes
         return self
 
     # atom getters
-    def aB(self) -> bool:
+    def aB(self):
         if self.t not in [-TypeEnum.KB]:
-            raise ValueError(f"wrong type {self._tn()} for aB")
+            raise ValueError("wrong type {0} for aB".format(self._tn()))
         return self.aG() == 1
 
-    def aG(self) -> int:
+    def aG(self):
         if self.t not in [-TypeEnum.KG, -TypeEnum.KB]:
-            raise ValueError(f"wrong type {self._tn()} for aG")
-        return cast(int, struct.unpack("B", self.data)[0])
+            raise ValueError("wrong type {0} for aG".format(self._tn()))
+        return struct.unpack("B", self.data)[0]
 
-    def aH(self) -> int:
+    def aH(self):
         if self.t not in [-TypeEnum.KH]:
-            raise ValueError(f"wrong type {self._tn()} for aH")
-        return cast(int, struct.unpack("h", self.data)[0])
+            raise ValueError("wrong type {0} for aH".format(self._tn()))
+        return struct.unpack("h", self.data)[0]
 
-    def aI(self) -> int:
+    def aI(self):
         if self.t not in [
             -TypeEnum.KI,
             -TypeEnum.KM,
@@ -360,44 +360,44 @@ class KObjAtom(KObj):
             -TypeEnum.KV,
             -TypeEnum.KT,
         ]:
-            raise ValueError(f"wrong type {self._tn()} for aI")
-        return cast(int, struct.unpack("i", self.data)[0])
+            raise ValueError("wrong type {0} for aI".format(self._tn()))
+        return struct.unpack("i", self.data)[0]
 
-    def aJ(self) -> int:
+    def aJ(self):
         if self.t not in [-TypeEnum.KJ, -TypeEnum.KP, -TypeEnum.KN]:
-            raise ValueError(f"wrong type {self._tn()} for aJ")
-        return cast(int, struct.unpack("q", self.data)[0])
+            raise ValueError("wrong type {0} for aJ".format(self._tn()))
+        return struct.unpack("q", self.data)[0]
 
-    def aU(self) -> uuid.UUID:
+    def aU(self):
         if self.t not in [-TypeEnum.UU]:
-            raise ValueError(f"wrong type {self._tn()} for aU")
+            raise ValueError("wrong type {0} for aU".format(self._tn()))
         return uuid.UUID(bytes=self.data)
 
-    def aE(self) -> float:
+    def aE(self):
         if self.t not in [-TypeEnum.KE]:
-            raise ValueError(f"wrong type {self._tn()} for aE")
-        return cast(float, struct.unpack("f", self.data)[0])
+            raise ValueError("wrong type {0} for aE".format(self._tn()))
+        return struct.unpack("f", self.data)[0]
 
-    def aF(self) -> float:
+    def aF(self):
         if self.t not in [-TypeEnum.KF, -TypeEnum.KZ]:
-            raise ValueError(f"wrong type {self._tn()} for aF")
-        return cast(float, struct.unpack("d", self.data)[0])
+            raise ValueError("wrong type {0} for aF".format(self._tn()))
+        return struct.unpack("d", self.data)[0]
 
-    def aC(self) -> str:
+    def aC(self):
         if self.t not in [-TypeEnum.KC]:
-            raise ValueError(f"wrong type {self._tn()} for aC")
+            raise ValueError("wrong type {0} for aC".format(self._tn()))
         bs = struct.unpack("c", self.data)[0]
-        return cast(str, bs.decode("ascii"))
+        return bs.decode("ascii")
 
     # serialisation
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return super()._databytes() + self.data
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         assert len(self.data) == ATOM_LENGTH[-self.t]
         return super()._paysz() + ATOM_LENGTH[-self.t]
 
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data, offset):
         bs = ATOM_LENGTH[-self.t]
         self.data = data[offset : offset + bs]
         return self, offset + bs
@@ -406,34 +406,34 @@ class KObjAtom(KObj):
 class KSymAtom(KObj):
     def __init__(
         self,
-        t: int = 0,
-        context: KContext = DEFAULT_CONTEXT,
-        sz: int = 0,
-        attr: int = 0,
-    ) -> None:
+        t=0,
+        context=DEFAULT_CONTEXT,
+        sz=0,
+        attr=0,
+    ):
         super().__init__(t, context)
-        self.data: bytes = b""
+        self.data = b""
 
-    def aI(self) -> int:
-        return cast(int, struct.unpack("i", self.data)[0])
+    def aI(self):
+        return struct.unpack("i", self.data)[0]
 
-    def aS(self) -> str:
+    def aS(self):
         return self.context.symbols_enc[self.aI()][0]
 
-    def ss(self, s: str) -> KObj:
+    def ss(self, s):
         if self.t not in [-TypeEnum.KS, TypeEnum.KRR]:
-            raise ValueError(f"wrong type {self._tn()} for ss()")
+            raise ValueError("wrong type {0} for ss()".format(self._tn()))
         self.data = struct.pack("i", self.context.ss(s))
         return self
 
     # serialisation
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return super()._databytes() + self.context.symbols_enc[self.aI()][1]
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return super()._paysz() + len(self.context.symbols_enc[self.aI()][1])
 
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data, offset):
         bs = data[offset:].index(b"\x00") + 1
         self.ss(data[offset : offset + bs - 1].decode("ascii"))
         return self, offset + bs
@@ -442,85 +442,85 @@ class KSymAtom(KObj):
 class KErrAtom(KObj):
     def __init__(
         self,
-        context: KContext = DEFAULT_CONTEXT,
-    ) -> None:
+        context=DEFAULT_CONTEXT,
+    ):
         super().__init__(TypeEnum.KRR, context)
-        self.data: bytes = b""
+        self.data = b""
 
-    def aS(self) -> str:
+    def aS(self):
         return self.data[:-1].decode("ascii")
 
-    def ss(self, s: str) -> KObj:
+    def ss(self, s):
         self.data = bytes(s, "ascii") + b"\x00"
         return self
 
     # serialisation
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return super()._databytes() + self.data
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return super()._paysz() + len(self.data)
 
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data, offset):
         bs = data[offset:].index(b"\x00") + 1
         self.data = data[offset : offset + bs - 1]
         return self, offset + bs
 
 
 class KRangedType(KObj):
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data, offset):
         attrib, sz = struct.unpack_from("<BI", data, offset=offset)
         self.attrib = attrib
         return self._ranged_frombytes(sz, data, offset + 5)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         raise self._te()
 
 
 class KByteArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.KG, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KG, sz=0, attr=0):
         super().__init__(t, attr=attr)
         self._g = array.array("B", [0] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 1 * len(self._g)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<bBI", self.t, self.attrib, len(self._g)) + struct.pack(
-            f"<{len(self._g)}B", *self._g
+            "<{0}B".format(len(self._g)), *self._g
         )
 
-    def kG(self) -> MutableSequence[int]:
+    def kG(self):
         return self._g
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._g)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         self._g = array.array("B", data[offset : offset + sz])
         return self, offset + sz
 
 
 class KShortArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.KH, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KH, sz=0, attr=0):
         super().__init__(t, attr=attr)
         self._h = array.array("h", [0] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 2 * len(self._h)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<bBI", self.t, self.attrib, len(self._h)) + struct.pack(
-            f"<{len(self._h)}H", *self._h
+            "<{0}H".format(len(self._h)), *self._h
         )
 
-    def kH(self) -> MutableSequence[int]:
+    def kH(self):
         return self._h
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._h)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         self._h = array.array("h", data[offset : offset + 2 * sz])
         return self, offset + 2 * sz
 
@@ -530,27 +530,27 @@ class KIntArray(KRangedType):
     # which breaks direct cast-style deserialising. So when l is 64 bits we need to
     # iteratively unpack with unpack_from. Somewhat annoying given the other types map
     # cleanly.
-    def __init__(self, t: int = TypeEnum.KI, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KI, sz=0, attr=0):
         super().__init__(t, attr=attr)
         self._i = array.array("l", [0] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 4 * len(self._i)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         if self._i.itemsize == 4:  # array type 'l' seems to store as 8 bytes
             pi = self._i.tobytes()
         else:
-            pi = struct.pack(f"<{len(self._i)}I", *self._i)
+            pi = struct.pack("<{0}I".format(len(self._i)), *self._i)
         return struct.pack("<bBI", self.t, self.attrib, len(self._i)) + pi
 
-    def kI(self) -> MutableSequence[int]:
+    def kI(self):
         return self._i
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._i)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         o2 = offset + 4 * sz
         if self._i.itemsize == 4:
             self._i = array.array("l", data[offset:o2])
@@ -564,32 +564,32 @@ class KIntArray(KRangedType):
 class KIntSymArray(KIntArray):
     # store symbol indexes in KIntArray
     # hook serialise to use null byte terminated representation
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + sum([len(self.context.symbols_enc[j][1]) for j in self._i])
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self._i))]
         for j in self._i:
             parts.append(self.context.symbols_enc[j][1])
         return b"".join(parts)
 
-    def kS(self) -> Sequence[str]:
+    def kS(self):
         # Warning: accessor read-only
         s = []
         for j in self._i:
             s.append(self.context.symbols_enc[j][0])
         return s
 
-    def appendS(self, *ss: str) -> KObj:
+    def appendS(self, *ss):
         for s in ss:
             j = self.context.ss(s)
             self._i.append(j)
         return self
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._i)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         self._i = array.array("l", [0] * sz)
         for i in range(sz):
             bs = data[offset:].index(b"\x00") + 1
@@ -601,99 +601,99 @@ class KIntSymArray(KIntArray):
 
 
 class KLongArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.KJ, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KJ, sz=0, attr=0):
         super().__init__(t, attr=attr)
         self._j = array.array("q", [0] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 8 * len(self._j)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<bBI", self.t, self.attrib, len(self._j)) + struct.pack(
-            f"<{len(self._j)}q", *self._j
+            "<{0}q".format(len(self._j)), *self._j
         )
 
-    def kJ(self) -> MutableSequence[int]:
+    def kJ(self):
         return self._j
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._j)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         self._j = array.array("q", data[offset : offset + 8 * sz])
         return self, offset + 8 * sz
 
 
 class KFloatArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.KF, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KF, sz=0, attr=0):
         super().__init__(t, attr=attr)
         self._e = array.array("f", [0] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 4 * len(self._e)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<bBI", self.t, self.attrib, len(self._e)) + struct.pack(
-            f"<{len(self._e)}f", *self._e
+            "<{0}f".format(len(self._e)), *self._e
         )
 
-    def kE(self) -> MutableSequence[float]:
+    def kE(self):
         return self._e
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._e)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         self._e = array.array("f", data[offset : offset + 4 * sz])
         return self, offset + 4 * sz
 
 
 class KDoubleArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.KF, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KF, sz=0, attr=0):
         super().__init__(t, attr=attr)
         self._f = array.array("d", [0] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 8 * len(self._f)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<bBI", self.t, self.attrib, len(self._f)) + struct.pack(
-            f"<{len(self._f)}d", *self._f
+            "<{0}d".format(len(self._f)), *self._f
         )
 
-    def kF(self) -> MutableSequence[float]:
+    def kF(self):
         return self._f
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._f)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         self._f = array.array("d", data[offset : offset + 8 * sz])
         return self, offset + 8 * sz
 
 
 class KCharArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.KC, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.KC, sz=0, attr=0):
         super().__init__(t, attr=attr)
-        self._c: array.array[str] = array.array("u", [" "] * sz)
+        self._c = array.array("u", [" "] * sz)
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + 4 + 1 * len(self._c)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         bs = self._c.tounicode().encode("ascii")
         return struct.pack("<bBI", self.t, self.attrib, len(self._c)) + bs
 
-    def kC(self) -> array.array:  # type: ignore[type-arg]
+    def kC(self):  # type: ignore[type-arg]
         return self._c
 
-    def aS(self) -> str:
+    def aS(self):
         return self._c.tounicode()
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._c)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         s = data[offset : offset + sz].decode("ascii")
         self._c = array.array("u", [])
         self._c.fromunicode(s)
@@ -701,26 +701,26 @@ class KCharArray(KRangedType):
 
 
 class KObjArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.K) -> None:
+    def __init__(self, t=TypeEnum.K):
         super().__init__(0)
-        self._k: list[KObj] = []
+        self._k = []
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         # sum sizes nested ks
         return 2 + 4 + sum([ko._paysz() for ko in self._k])
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self._k))]
         parts.extend(ko._databytes() for ko in self._k)
         return b"".join(parts)
 
-    def kK(self) -> MutableSequence[KObj]:
+    def kK(self):
         return self._k
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._k)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         for i in range(sz):
             obj, offset = _d9_unpackfrom(data, offset)
             self._k.append(obj)
@@ -728,44 +728,44 @@ class KObjArray(KRangedType):
 
 
 class KUUIDArray(KRangedType):
-    def __init__(self, t: int = TypeEnum.UU, sz: int = 0, attr: int = 0) -> None:
+    def __init__(self, t=TypeEnum.UU, sz=0, attr=0):
         super().__init__(TypeEnum.UU)
-        self._u: list[uuid.UUID] = [uuid.UUID(int=0)] * sz
+        self._u = [uuid.UUID(int=0)] * sz
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         # sum sizes nested ks
         return 2 + 4 + 16 * len(self._u)
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self._u))]
         parts.extend(uu.bytes for uu in self._u)
         return b"".join(parts)
 
-    def kU(self) -> MutableSequence[uuid.UUID]:
+    def kU(self):
         return self._u
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._u)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz, data, offset):
         for i in range(sz):
             start = offset + i * 16
             self._u.append(uuid.UUID(bytes=data[start : start + 16]))
         return self, offset + 16 * sz
 
 
-def b9(k: KObj, msgtype: int = 0, flags: int = 0) -> bytes:
+def b9(k, msgtype=0, flags=0):
     # 8 byte header
     msglen = 8 + k._paysz()
     return struct.pack("<BBHI", 1, msgtype, flags, msglen) + k._databytes()
 
 
-def d9(data: bytes) -> KObj:
+def d9(data):
     # raises struct.error on underflow
     ver, msgtype, flags, msglen = struct.unpack_from("<BBHI", data, offset=0)
     if len(data) < msglen:
         raise ValueError(
-            f"buffer is too short, required {msglen} bytes, got {len(data)}"
+            "buffer is too short, required {0} bytes, got {1}".format(msglen, len(data))
         )
     offset = 8
     if flags == 1:
@@ -781,14 +781,16 @@ def d9(data: bytes) -> KObj:
 
     k, pos = _d9_unpackfrom(data, offset=offset)
     if pos != msglen:
-        raise Exception(f"Final position at {pos} expected {msglen}")
+        raise Exception("Final position at {0} expected {1}".format(pos, msglen))
     return k
 
 
-def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
+def _d9_unpackfrom(data, offset):
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
-    logger.debug(f" at offset {offset}/{len(data)} unpacking type {tn(t)}")
+    logger.debug(
+        " at offset {0}/{1} unpacking type {2}".format(offset, len(data), tn(t))
+    )
     if t == -TypeEnum.KS or t == TypeEnum.KRR:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:
@@ -812,48 +814,48 @@ def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
         return KDict(kkeys, kvalues, t), offset
     elif t >= 20 and t < 30:
         return VECTOR_CONSTUCTORS[TypeEnum.KJ](t).frombytes(data, offset)
-    raise ValueError(f"Unable to d9 unpack t={t}")
+    raise ValueError("Unable to d9 unpack t={0}".format(t))
 
 
 # atom constructors
-def ka(t: Union[int, TypeEnum]) -> KObj:
+def ka(t):
     return KObjAtom(t)
 
 
-def kb(b: bool) -> KObj:
+def kb(b):
     return KObjAtom(-TypeEnum.KB).b(b)
 
 
-def kc(c: str) -> KObj:
+def kc(c):
     return KObjAtom(-TypeEnum.KC).c(c)
 
 
-def kg(i: int) -> KObj:
+def kg(i):
     return KObjAtom(-TypeEnum.KG).g(i)
 
 
-def kh(i: int) -> KObj:
+def kh(i):
     return KObjAtom(-TypeEnum.KH).h(i)
 
 
-def ki(i: int) -> KObj:
+def ki(i):
     return KObjAtom(-TypeEnum.KI).i(i)
 
 
-def kj(i: int) -> KObj:
+def kj(i):
     return KObjAtom(-TypeEnum.KJ).j(i)
 
 
-def ks(s: str) -> KObj:
+def ks(s):
     return KSymAtom(-TypeEnum.KS).ss(s)
 
 
-def kuu(uu: uuid.UUID) -> KObj:
+def kuu(uu):
     return KObjAtom(-TypeEnum.UU).uu(uu)
 
 
 # vector constructors
-VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
+VECTOR_CONSTUCTORS = {
     TypeEnum.K: KObjArray,
     TypeEnum.KB: KByteArray,
     TypeEnum.KG: KByteArray,
@@ -876,7 +878,7 @@ VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
 }
 
 
-def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
+def ktn(t, sz=0, attr=AttrEnum.NONE):
     if t == TypeEnum.K:
         if sz > 0:
             raise ValueError("ktn K can only be empty at initialisation")
@@ -884,57 +886,57 @@ def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
     try:
         return VECTOR_CONSTUCTORS[t](t, sz=sz, attr=attr)
     except KeyError:
-        raise ValueError(f"ktn for type {tn(t)}")
+        raise ValueError("ktn for type {0}".format(tn(t)))
 
 
-def kk(*objs: KObj) -> KObj:
+def kk(*objs):
     k = ktn(TypeEnum.K)
     k.kK().extend(objs)
     return k
 
 
-def cv(s: str) -> KObj:
+def cv(s):
     k = ktn(TypeEnum.KC)
     k.kC().fromunicode(s)
     return k
 
 
 class KDict(KObj):
-    def __init__(self, kkeys: KObj, kvalues: KObj, t: TypeEnum = TypeEnum.XD):
+    def __init__(self, kkeys, kvalues, t=TypeEnum.XD):
         if len(kkeys) != len(kvalues):
             raise ValueError("dict keys and values must be same length")
         super().__init__(t)
         if t == TypeEnum.SD and kkeys.t != TypeEnum.XT and kkeys.attrib == 0:
-            raise ValueError(f"Keys not sorted for SD {kkeys._tn()}")
+            raise ValueError("Keys not sorted for SD {0}".format(kkeys._tn()))
         self._kkey = kkeys
         self._kvalue = kvalues
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 1 + self._kkey._paysz() + self._kvalue._paysz()
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return (
             struct.pack("<B", self.t)
             + self._kkey._databytes()
             + self._kvalue._databytes()
         )
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self._kkey)
 
-    def kkey(self) -> KObj:
+    def kkey(self):
         return self._kkey
 
-    def kvalue(self) -> KObj:
+    def kvalue(self):
         return self._kvalue
 
-    def __getitem__(self, item: str) -> KObj:
+    def __getitem__(self, item):
         if self._kkey.t == TypeEnum.KS:
             try:
                 idx = self.kkey().kS().index(item)
                 return self.kvalue().kK()[idx]
             except ValueError:
-                raise KeyError(f"Key not found {item}")
+                raise KeyError("Key not found {0}".format(item))
         elif self._kkey.t == TypeEnum.K:
             # check for any nested atomic symbol keys within the K object array
             for idx in range(len(self._kkey)):
@@ -942,15 +944,15 @@ class KDict(KObj):
                 if k.t == -TypeEnum.KS:
                     if k.aS() == item:
                         return self.kvalue().kK()[idx]
-            raise KeyError(f"Key not found {item}")
+            raise KeyError("Key not found {0}".format(item))
 
-        raise KeyError(f"Key lookup not possible on {self._kkey._tn()}")
+        raise KeyError("Key lookup not possible on {0}".format(self._kkey._tn()))
 
 
 class KFlip(KObj):
-    def __init__(self, kd: KObj, sorted: bool = False):
+    def __init__(self, kd, sorted=False):
         if kd.t != TypeEnum.XD:
-            raise ValueError(f"can only flip a dict, not {kd._tn()}")
+            raise ValueError("can only flip a dict, not {0}".format(kd._tn()))
         if len(kd.kkey()) == 0:
             raise ValueError("must have >0 columns")
         if kd.kvalue().t != TypeEnum.K:
@@ -966,16 +968,16 @@ class KFlip(KObj):
         super().__init__(TypeEnum.XT, attr=attr)
         self._kvalue = kd
 
-    def _paysz(self) -> int:
+    def _paysz(self):
         return 2 + self._kvalue._paysz()
 
-    def _databytes(self) -> bytes:
+    def _databytes(self):
         return struct.pack("<bB", self.t, self.attrib) + self._kvalue._databytes()
 
-    def kvalue(self) -> KObj:
+    def kvalue(self):
         return self._kvalue
 
-    def __len__(self) -> int:
+    def __len__(self):
         # the length of a table is not the length of it's contained dictionary, as that is the number of columns.
         # we need to read-through to the first columns data.
         assert self.kvalue().t == TypeEnum.XD
@@ -986,23 +988,23 @@ class KFlip(KObj):
         first_col = tdict_values.kK()[0]
         return len(first_col)
 
-    def __getitem__(self, item: str) -> KObj:
+    def __getitem__(self, item):
         try:
             idx = self.kS().index(item)
             return self.kK()[idx]
         except ValueError:
-            raise KeyError(f"Column not found {item}")
+            raise KeyError("Column not found {0}".format(item))
 
-    def kS(self) -> Sequence[str]:
+    def kS(self):
         # column names
         return self.kvalue().kkey().kS()
 
-    def kK(self) -> MutableSequence[KObj]:
+    def kK(self):
         # column values
         return self.kvalue().kvalue().kK()
 
 
-def krr(msg: str) -> KObj:
+def krr(msg):
     return KSymAtom(TypeEnum.KRR).ss(msg)
 
 
@@ -1013,13 +1015,13 @@ class KException(Exception):
     pass
 
 
-def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
+def xd(kkeys, kvalues, sorted=False):
     if sorted:
         return KDict(kkeys, kvalues, TypeEnum.SD)
     return KDict(kkeys, kvalues)
 
 
-def xt(kd: KDict, sorted: bool = False) -> KFlip:
+def xt(kd, sorted=False):
     return KFlip(kd, sorted=sorted)
 
 

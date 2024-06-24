@@ -14,13 +14,13 @@ from aiokdb.client import open_qipc_connection
 from aiokdb.format import AsciiFormatter
 
 
-async def main(args: Any) -> None:
+async def main(args):
     r, w = await open_qipc_connection(
         host=args.host, port=args.port, user=args.user, password=args.password
     )
 
     history = FileHistory(os.path.expanduser("~/.aiokdb-cli-history"))
-    session: Any = PromptSession("(eval) > ", history=history)
+    session = PromptSession("(eval) > ", history=history)
     fmt = AsciiFormatter(height=args.height)
 
     # Run echo loop. Read text from stdin, and reply it back.

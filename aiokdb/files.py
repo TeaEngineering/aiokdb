@@ -7,7 +7,7 @@ from aiokdb import KObj, _d9_unpackfrom
 PathLike = TypeVar("PathLike", str, pathlib.Path)
 
 
-def kfromfile(filename: PathLike) -> KObj:
+def kfromfile(filename):
     with open(filename, "rb") as f:
         # theres no length header since files have a size
         rb = f.read()
@@ -16,7 +16,7 @@ def kfromfile(filename: PathLike) -> KObj:
         return k
 
 
-def ktofile(k: KObj, filename: PathLike) -> None:
+def ktofile(k, filename):
     # writing directly in-place is dangerous, and can leave corrupt data if we crash
     # or are sent a signal mid-write. Write to a temporary file and then rename once
     # closed

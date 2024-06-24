@@ -1,8 +1,7 @@
 import itertools
 from datetime import datetime, timezone
-from typing import Iterable, Optional, Sequence
 
-from aiokdb import KObj, Nulls, TypeEnum
+from . import KObj, Nulls, TypeEnum
 
 # Keeping formating external to KObj since it complicates the implementation.
 # This produces AsciiFormatter produces numpy-like formatting, ie. it truncates the central section of a table
@@ -18,12 +17,12 @@ from aiokdb import KObj, Nulls, TypeEnum
 
 
 class AsciiFormatter:
-    def __init__(self, width: int = 200, height: int = 10):
+    def __init__(self, width=200, height=10):
         self.width = width
         self.height = height
         self.inline_chars = width / 3
 
-    def format(self, obj: KObj) -> str:
+    def format(self, obj):
         if obj.t == TypeEnum.XT:
             return self._fmt_unkeyed_table(obj)
         elif obj.t == TypeEnum.XD and obj.kkey().t == TypeEnum.XT:
@@ -32,15 +31,15 @@ class AsciiFormatter:
             return self._fmt_dict(obj)
         return self._fmt_inline(obj)
 
-    def _fmt_unkeyed_table(self, obj: KObj) -> str:
+    def _fmt_unkeyed_table(self, obj):
         rowcount = self._table_conforms(obj)
         rows = self._select_rows(rowcount)
         return "\n".join(self._format_table_rows(obj, rows))
 
-    def _select_rows(self, rowcount: int) -> Iterable[Optional[int]]:
+    def _select_rows(self, rowcount):
         if rowcount < self.height - 2:
             # no need to truncate rows
-            rows: Iterable[Optional[int]] = itertools.chain(range(rowcount))
+            rows = itertools.chain(range(rowcount))
         else:
             chunk = (self.height - 3) // 2
             rows = itertools.chain(
@@ -48,7 +47,7 @@ class AsciiFormatter:
             )
         return rows
 
-    def _table_conforms(self, obj: KObj) -> int:
+    def _table_conforms(self, obj):
         assert obj.t == TypeEnum.XT
         obj = obj.kvalue()
         assert obj.t == TypeEnum.XD
@@ -62,7 +61,7 @@ class AsciiFormatter:
             assert len(kv[i]) == rowcount
         return rowcount
 
-    def _fmt_keyed_table(self, obj: KObj) -> str:
+    def _fmt_keyed_table(self, obj):
         ktv = obj.kvalue()
         ktk = obj.kkey()
 
@@ -77,18 +76,20 @@ class AsciiFormatter:
         right = self._format_table_rows(obj.kvalue(), rows)
 
         filler = [" ", "-"] + [" "] * len(rows)
-        return "\n".join(f"{ll}|{g}{rr}" for g, ll, rr in zip(filler, left, right))
+        return "\n".join(
+            "{0}|{1}{2}".format(ll, g, rr) for g, ll, rr in zip(filler, left, right)
+        )
 
-    def _format_table_rows(self, obj: KObj, rows: Iterable[Optional[int]]) -> list[str]:
+    def _format_table_rows(self, obj, rows):
         d1 = obj.kvalue()
 
-        colNames: Sequence[str] = d1.kkey().kS()
+        colNames = d1.kkey().kS()
         kv = d1.kvalue().kK()
 
-        colWidths: list[int] = list(map(len, colNames))
+        colWidths = list(map(len, colNames))
 
         # stringify all cells within our rowiter
-        rowSample: list[list[str]] = []
+        rowSample = []
         for r in rows:
             cs = []
             for c in range(len(colNames)):
@@ -100,13 +101,18 @@ class AsciiFormatter:
         # now do the padding of pre-stringified cells
         rowText = []
         for row in rowSample:
-            rowText.append(" ".join([f"{t:{w}}" for w, t in zip(colWidths, row)]))
+            rowText.append(
+                " ".join(["{t:{w}}".format(w=w, t=t) for w, t in zip(colWidths, row)])
+            )
 
-        headers = " ".join([f"{t:{w}}" for w, t in zip(colWidths, colNames)])
+        headers = " ".join(
+            ["{t:{w}}".format(w=w, t=t) for w, t in zip(colWidths, colNames)]
+        )
         dashes = "".join(["-"] * len(headers))
-        return [headers, dashes, *rowText]
+        rowText = [headers, dashes] + rowText
+        return rowText
 
-    def _str_cell(self, obj: KObj, col: int, index: Optional[int]) -> str:
+    def _str_cell(self, obj, col, index):
         if index is None:
             if col == 0:
                 return "..."
@@ -164,9 +170,11 @@ class AsciiFormatter:
             return self._fmt_atom_p(j)
         elif obj.t == TypeEnum.KC:
             return obj.aS()[index]
-        raise ValueError(f"No cell formatter for {obj} with type {obj._tn()}")
+        raise ValueError(
+            "No cell formatter for {0} with type {1}".format(obj, obj._tn())
+        )
 
-    def _fmt_atom_p(self, j: int) -> str:
+    def _fmt_atom_p(self, j):
         if j == Nulls.j:
             return ""
         # timestamp (nanos) q)"p"$1  2000.01.01D00:00:00.000000001
@@ -176,9 +184,9 @@ class AsciiFormatter:
         micros = j // 1000
         origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
         dt = datetime.utcfromtimestamp(origin + micros / 1000000.0)
-        return dt.strftime("%Y.%m.%dD%H:%M:%S:%f") + f"{nanos:03}"
+        return dt.strftime("%Y.%m.%dD%H:%M:%S:%f") + "{0:03}".format(nanos)
 
-    def _fmt_atom_n(self, j: int) -> str:
+    def _fmt_atom_n(self, j):
         if j == Nulls.j:
             return ""
         # timespan (nanos) q) "n"$1  0D00:00:00.000000001
@@ -190,42 +198,44 @@ class AsciiFormatter:
         secs = secs % 60
         m = m % 60
         h = h % 24
-        return f"{d}D{h:02}:{m:02}:{secs:02}.{nanos:09}"
+        return "{d}D{h:02}:{m:02}:{secs:02}.{nanos:09}".format(
+            d=d, h=h, m=m, secs=secs, nanos=nanos
+        )
 
-    def _fmt_atom_m(self, m: int) -> str:
+    def _fmt_atom_m(self, m):
         if m == Nulls.i:
             return "0Nm"
-        return f"{m/12:04}.{m%12:02}m"
+        return "{m/12:04}.{m%12:02}m".format(m=m)
 
-    def _fmt_atom_d(self, d: int) -> str:
+    def _fmt_atom_d(self, d):
         if d == Nulls.i:
             return "0Nd"
         origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
         dt = datetime.utcfromtimestamp(origin + d)
         return dt.strftime("%Y.%m.%d")
 
-    def _fmt_atom_z(self, d: float) -> str:
+    def _fmt_atom_z(self, d):
         if d == Nulls.f:
             return "0Nz"
         origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
         dt = datetime.utcfromtimestamp(origin + d)
         return dt.strftime("%Y.%m.%dT%H:%M:%S:%f")
 
-    def _fmt_atom_u(self, u: int) -> str:
+    def _fmt_atom_u(self, u):
         if u == Nulls.i:
             return "0Nu"
         # TODO: formatting >1h etc
-        return f"{u/60:02}:{u%60:02}"
+        return "{u/60:02}:{u%60:02}".format(u=u)
 
-    def _fmt_atom_v(self, v: int) -> str:
+    def _fmt_atom_v(self, v):
         if v == Nulls.i:
             return "0Nv"
         h = v / 3600
         m = (v / 60) % 60
         s = v % 60
-        return f"{h:02}:{m:02}:{s:02}"
+        return "{h:02}:{m:02}:{s:02}".format(h=h, m=m, s=s)
 
-    def _fmt_atom_t(self, t: int) -> str:
+    def _fmt_atom_t(self, t):
         if t == Nulls.i:
             return "ONt"
         # timespan in nanos
@@ -237,9 +247,11 @@ class AsciiFormatter:
         secs = secs % 60
         m = m % 60
         h = h % 24
-        return f"{d}D{h:02}:{m:02}:{secs:02}.{nanos:09}"
+        return "{d}D{h:02}:{m:02}:{secs:02}.{nanos:09}".format(
+            d=d, h=h, m=m, secs=secds, nanos=nanos
+        )
 
-    def _fmt_dict(self, obj: KObj) -> str:
+    def _fmt_dict(self, obj):
         # measure the keys
         rows = list(self._select_rows(len(obj)))
         ks, vs = [], []
@@ -251,9 +263,14 @@ class AsciiFormatter:
             ks.append(k)
             vs.append(v)
 
-        return "\n".join([f"{k:{keywidth}}| {v}" for k, v in zip(ks, vs)])
+        return "\n".join(
+            [
+                "{k:{keywidth}}| {v}".format(keywidth=keywidth, k=k, v=v)
+                for k, v in zip(ks, vs)
+            ]
+        )
 
-    def _fmt_inline(self, obj: KObj) -> str:
+    def _fmt_inline(self, obj):
         # we are expecting to format the object in a constrained environment, ie. within the
         # cell of a table or dictionary. We can take up at most one line of text and width
         # of inline_chars
@@ -278,7 +295,7 @@ class AsciiFormatter:
         elif obj.t == -TypeEnum.KS:
             return obj.aS()
         elif obj.t == -TypeEnum.KC:
-            return f'"{obj.aC()}"'
+            return '"{0}"'.format(obj.aC())
         elif obj.t == -TypeEnum.KG or obj.t == -TypeEnum.KB:
             return str(obj.aG())
         elif obj.t == -TypeEnum.KN:
@@ -307,7 +324,7 @@ class AsciiFormatter:
             # sample the vector (first five?)
             elems = list(self._select_rows(len(obj)))
             ks = ", ".join([self._str_cell(obj, 0, r) for r in elems])
-            return f"[{ks}]"
+            return "[{0}]".format(ks)
         elif obj.t == TypeEnum.KC:
             elems = list(self._select_rows(len(obj)))
             return "".join([self._str_cell(obj, 0, r) for r in elems])
@@ -325,4 +342,6 @@ class AsciiFormatter:
         elif obj.t == TypeEnum.NIL:
             return "::"
 
-        raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")
+        raise ValueError(
+            "No inline formatter for {0} with type {1}".format(obj, obj._tn())
+        )
