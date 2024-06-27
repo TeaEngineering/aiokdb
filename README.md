@@ -9,16 +9,17 @@ Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bi
 
 This library takes a different approach and aims to replicate using the KDB C-library functions, ie. being 100% explicit about KDB types. It was built working from the publically documented [Serialization Examples](https://code.kx.com/q/kb/serialization/) and [C API for kdb+](https://code.kx.com/q/wp/capi/) pages. Users might also need to be familiar with [k.h](https://github.com/KxSystems/ffi/blob/master/include/k.h).
 
-A simple example:
+A simple example, using blocking sockets:
 
 ```python
 from aiokdb.socket import khpu
 # run ./q -p 12345 &
 
 h = khpu("localhost", 12345, "kdb:pass")
+
+# if the remote returns a Q Exception, this gets raised here, unless khpu(..., raise_krr=False)
 result = h.k("2.0+3.0")
 
-# if the remote returns a Q Exception, this gets raised, unless khpu(..., raise_krr=False)
 assert result.aF() == 5.0
 ````
 
@@ -26,17 +27,22 @@ The `result` object is a K-like Python object (a `KObj`), having the usual signe
 
 Arrays are implemented with subtypes that use [Python's native arrays module](https://docs.python.org/3/library/array.html) for efficient array types. The `MutableSequence` arrays are returned using the usual array accessor functions `.kI()`, `.kB()`, `.kS()` etc.
 
-Serialisation is handled by `b9` which returns a python bytes, and `d9` which takes a bytes and returns a K-object.
+Serialisation is handled by the `b9` function, which encodes a `KObj` to a python `bytes`, and the `d9` function which takes a `bytes` and returns a `KObj`.
 
 * Atoms are created by `ka`, `kb`, `ku`, `kg`, `kh`, `ki`, `kj`, `ke`, `kf`, `kc`, `ks`, `kt`, `kd`, `kz`, `ktj`
 * Lists with `ktn` and `knk`
 * Dictionaries with `xd` and tables with `xt`.
 
-Python manages garbage collection, none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm` are absent.
+Python manages garbage collection, so none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm`.
+
+## Asyncio
+
+Both kdb client and server *protocols* are implemented using asyncio, and can be tested back-to-back. 
+For instance running `python -m aiokdb.server` and then `python -m aiokdb.client` will connect together using KDB ipc. However since there is no _interpreter_ (and the default server does not handle any commands) the server will return an `nyi` error to all queries. To implement a partial protocol for your own application, subclass `aiokdb.server.ServerContext` and implement `on_sync_request()`, `on_async_message()`, and perhaps `check_login()`.
 
 ## RPC
 
-Client support using python asyncio is built into the package, and uses `prompt_toolkit` for line editing:
+Usable command line client support (using python asyncio, and `prompt_toolkit` for line editing) is built into the package:
 
 ```bash
 $ pip install aiokdb prompt_toolkit
@@ -53,8 +59,7 @@ $
 ```
 
 ## Tests
-
-The unit tests in `test/test_rpc.py` will use a real KDB binary to test against (over RPC) if you set `KDB_PYTEST_SERVICE` to a URL of the form `kdb://user:password@hostname:port`, otherwise that test is skipped and they are self contained.
+The library has extensive test coverage, however de-serialisation of certain (obscure) KObj may not be fully supported yet. PR's welcome. All tests are pure python except for those in `test/test_rpc.py`, which will use a real KDB server to test against if you set the `KDB_PYTEST_SERVICE` environment variable (to a URL of the form `kdb://user:password@hostname:port`), otherwise that test is skipped.
 
 * Formatting with `ruff check .`
 * Formatting with `ruff format .`
