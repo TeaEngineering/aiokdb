@@ -195,9 +195,9 @@ def test_overflows_KG() -> None:
     k.kG().append(255)
     assert len(k.kG()) == 1
 
-    with pytest.raises(struct.error, match=r".*ubyte.*"):
+    with pytest.raises(struct.error, match=r"(.*ubyte.*|.*format requires.*)"):
         kg(-1)
-    with pytest.raises(struct.error, match=r".*ubyte.*"):
+    with pytest.raises(struct.error, match=r"(.*ubyte.*|.*format requires.*)"):
         kg(256)
     kg(255)
     kg(0)
@@ -220,7 +220,7 @@ def test_overflows_KH() -> None:
     kh(32767)
     kh(-32767)
     kh(-32768)  # null
-    with pytest.raises(struct.error, match=r"short format requires .* <= number .*"):
+    with pytest.raises(struct.error, match=r".*format requires .* <= number .*"):
         kh(32768)
 
 
