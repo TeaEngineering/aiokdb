@@ -55,3 +55,4 @@ if __name__ == "__main__":
     result = h.k("2.0+3.0")
     assert result.aF() == 5.0
     print(result)
+    result.aJ()

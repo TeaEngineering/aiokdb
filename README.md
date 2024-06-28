@@ -1,4 +1,4 @@
-[![PyPI version](https://badge.fury.io/py/aiokdb.svg)](https://badge.fury.io/py/aiokdb)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/TeaEngineering/aiokdb/check.yml) [![PyPI version](https://badge.fury.io/py/aiokdb.svg)](https://badge.fury.io/py/aiokdb)
 
 # aiokdb
 Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bindings or kdb shared objects, or numpy/pandas. Fully type hinted to comply with `PEP-561`. No non-core dependancies, and tested on Python 3.8 - 3.12.
@@ -21,6 +21,8 @@ h = khpu("localhost", 12345, "kdb:pass")
 result = h.k("2.0+3.0")
 
 assert result.aF() == 5.0
+# raises ValueError: wrong type KF (-9) for aJ
+result.aJ()
 ````
 
 The `result` object is a K-like Python object (a `KObj`), having the usual signed integer type available as `result.type`. Accessors for the primitive types are prefixed with an `a` and check at runtime that the accessor is appropriate for the stored type (`.aI()`, `.aJ()`, `.aH()`, `.aF()` etc.). Atoms store their value to a `bytes` object irrespective of the type, and encode/decode on demand. Atomic values can be set with (`.i(3)`, `.j(12)`, `.ss("hello")`).
@@ -37,12 +39,12 @@ Python manages garbage collection, so none of the refcounting primitives exist, 
 
 ## Asyncio
 
-Both kdb client and server *protocols* are implemented using asyncio, and can be tested back-to-back. 
+Both kdb client and server *protocols* are implemented using asyncio, and can be tested back-to-back.
 For instance running `python -m aiokdb.server` and then `python -m aiokdb.client` will connect together using KDB ipc. However since there is no _interpreter_ (and the default server does not handle any commands) the server will return an `nyi` error to all queries. To implement a partial protocol for your own application, subclass `aiokdb.server.ServerContext` and implement `on_sync_request()`, `on_async_message()`, and perhaps `check_login()`.
 
-## RPC
+## Command Line Interface
 
-Usable command line client support (using python asyncio, and `prompt_toolkit` for line editing) is built into the package:
+Usable command line client support for connecting to a remote KDB instance (using python `asyncio`, and `prompt_toolkit` for line editing and history) is built into the package:
 
 ```bash
 $ pip install aiokdb prompt_toolkit
@@ -54,9 +56,15 @@ s| x                                    y
 7| 409031f3-b19c-6770-ee84-6e9369c98697 2
 6| 52cb20d9-f12c-9963-2829-3c64d8d8cb14 2
  | cddeceef-9ee9-3847-9172-3e3d7ab39b26 2
-(eval) > \\
+(eval) > 4 5 6!(`abc`def;til 300;(3 4!`a`b))
+4| abc def
+5| 0 1 2 ... 297 298 299
+6| KDict
+(eval) > [ctrl-D]
 $
 ```
+
+Text formatting above is controlled by `aiokdb.format.ASCIIFormatter`, which looks inside a `KObj` to render `XD`, `SD`, `XT` types in tablular form containing atom and vector values. Nested complex types ie. dict or table render as `KDict` or `KFlip` constant.
 
 ## Tests
 The library has extensive test coverage, however de-serialisation of certain (obscure) KObj may not be fully supported yet. PR's welcome. All tests are pure python except for those in `test/test_rpc.py`, which will use a real KDB server to test against if you set the `KDB_PYTEST_SERVICE` environment variable (to a URL of the form `kdb://user:password@hostname:port`), otherwise that test is skipped.
@@ -65,5 +73,3 @@ The library has extensive test coverage, however de-serialisation of certain (ob
 * Formatting with `ruff format .`
 * Check type annotations with `mypy --strict .`
 * Run `pytest .` in the root directory
-
-
