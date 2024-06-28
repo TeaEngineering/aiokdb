@@ -1,13 +1,13 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/TeaEngineering/aiokdb/check.yml) [![PyPI version](https://badge.fury.io/py/aiokdb.svg)](https://badge.fury.io/py/aiokdb)
 
 # aiokdb
-Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bindings or kdb shared objects, or numpy/pandas. Fully type hinted to comply with `PEP-561`. No non-core dependancies, and tested on Python 3.8 - 3.12.
+Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bindings or kdb shared objects, or numpy/pandas. Fully type hinted to comply with `PEP-561`. No non-core dependencies, and tested on Python 3.8 - 3.12.
 
 ## Peer review & motivation
 
 [qPython](https://github.com/exxeleron/qPython) is a widely used library for this task and it maps objects to Pandas Dataframes which might be more suitable for the majority of applications.
 
-This library takes a different approach and aims to replicate using the KDB C-library functions, ie. being 100% explicit about KDB types. It was built working from the publically documented [Serialization Examples](https://code.kx.com/q/kb/serialization/) and [C API for kdb+](https://code.kx.com/q/wp/capi/) pages. Users might also need to be familiar with [k.h](https://github.com/KxSystems/ffi/blob/master/include/k.h).
+This library takes a different approach and aims to replicate using the KDB C-library functions, ie. being 100% explicit about KDB types. It was built working from the publicly documented [Serialisation Examples](https://code.kx.com/q/kb/serialization/) and [C API for kdb+](https://code.kx.com/q/wp/capi/) pages. Users might also need to be familiar with [k.h](https://github.com/KxSystems/ffi/blob/master/include/k.h).
 
 A simple example, using blocking sockets:
 
@@ -35,12 +35,12 @@ Serialisation is handled by the `b9` function, which encodes a `KObj` to a pytho
 * Lists with `ktn` and `knk`
 * Dictionaries with `xd` and tables with `xt`.
 
-Python manages garbage collection, so none of the refcounting primitives exist, ie. `k.r` and functions `r1`, `r0` and `m9`, `setm`.
+Python manages garbage collection, so none of the reference counting primitives exist, i.e. `k.r` and functions `r1`, `r0` and `m9`, `setm`.
 
 ## Asyncio
 
 Both kdb client and server *protocols* are implemented using asyncio, and can be tested back-to-back.
-For instance running `python -m aiokdb.server` and then `python -m aiokdb.client` will connect together using KDB ipc. However since there is no _interpreter_ (and the default server does not handle any commands) the server will return an `nyi` error to all queries. To implement a partial protocol for your own application, subclass `aiokdb.server.ServerContext` and implement `on_sync_request()`, `on_async_message()`, and perhaps `check_login()`.
+For instance running `python -m aiokdb.server` and then `python -m aiokdb.client` will connect together using KDB IPC. However since there is no _interpreter_ (and the default server does not handle any commands) the server will return an `nyi` error to all queries. To implement a partial protocol for your own application, subclass `aiokdb.server.ServerContext` and implement `on_sync_request()`, `on_async_message()`, and perhaps `check_login()`.
 
 ## Command Line Interface
 
@@ -64,7 +64,23 @@ s| x                                    y
 $
 ```
 
-Text formatting above is controlled by `aiokdb.format.ASCIIFormatter`, which looks inside a `KObj` to render `XD`, `SD`, `XT` types in tablular form containing atom and vector values. Nested complex types ie. dict or table render as `KDict` or `KFlip` constant.
+Text formatting above is controlled by `aiokdb.format.ASCIIFormatter`, which looks inside a `KObj` to render `XD`, `SD`, `XT` types in tabular form containing atom and vector values. Nested complex types ie. dictionary or table render as `KDict` or `KFlip` constant.
+
+## QDB Files
+Ordinary `.qdb` files written with set can be read by `kfromfile` or written by `ktofile`:
+
+```python
+>>> from aiokdb.files import kfromfile, ktofile
+>>> k = kfromfile('test_qdb0/test.qdb')
+>>> k
+<aiokdb.KObjArray object at 0x7559136d8230>
+>>> from aiokdb.format import AsciiFormatter
+>>> fmt = AsciiFormatter()
+>>> print(fmt.format(k))
+[5, hello]
+```
+
+Ordinarily `k` is dictionary representing a KDB namespace containing other objects.
 
 ## Tests
 The library has extensive test coverage, however de-serialisation of certain (obscure) KObj may not be fully supported yet. PR's welcome. All tests are pure python except for those in `test/test_rpc.py`, which will use a real KDB server to test against if you set the `KDB_PYTEST_SERVICE` environment variable (to a URL of the form `kdb://user:password@hostname:port`), otherwise that test is skipped.
