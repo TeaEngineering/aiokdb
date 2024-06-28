@@ -1,7 +1,7 @@
 [![PyPI version](https://badge.fury.io/py/aiokdb.svg)](https://badge.fury.io/py/aiokdb)
 
 # aiokdb
-Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bindings or kdb shared objects, or numpy/pandas. Fully type hinted to comply with `PEP-561`. No non-core dependancies, and tested on Python 3.9 - 3.11.
+Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bindings or kdb shared objects, or numpy/pandas. Fully type hinted to comply with `PEP-561`. No non-core dependancies, and tested on Python 3.8 - 3.12.
 
 ## Peer review & motivation
 
