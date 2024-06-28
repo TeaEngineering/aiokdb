@@ -4,7 +4,7 @@ import logging
 import struct
 import uuid
 from collections.abc import MutableSequence, Sequence
-from typing import Any, Type, Union, cast
+from typing import Any, Dict, List, Tuple, Type, Union, cast
 
 __all__ = [
     "b9",
@@ -82,7 +82,7 @@ class TypeEnum(enum.IntEnum):
 
 
 # Remember to special case TypeEnum.KS and TypeEnum.K
-ATOM_LENGTH: dict[int, int] = {
+ATOM_LENGTH: Dict[int, int] = {
     TypeEnum.KB: 1,
     TypeEnum.UU: 16,
     TypeEnum.KG: 1,
@@ -106,8 +106,8 @@ ATOM_LENGTH: dict[int, int] = {
 
 class KContext:
     def __init__(self) -> None:
-        self.symbols: dict[str, int] = {}
-        self.symbols_enc: dict[int, tuple[str, bytes]] = {}
+        self.symbols: Dict[str, int] = {}
+        self.symbols_enc: Dict[int, Tuple[str, bytes]] = {}
 
     def ss(self, s: str) -> int:
         # we don't want any surprises trying to serialise non-ascii symbols later
@@ -215,37 +215,37 @@ class KObj:
         raise self._te()
 
     # vector getters
-    def kK(self) -> MutableSequence["KObj"]:
+    def kK(self) -> "MutableSequence[KObj]":
         raise self._te()
 
-    def kU(self) -> MutableSequence[uuid.UUID]:
+    def kU(self) -> "MutableSequence[uuid.UUID]":
         raise self._te()
 
-    def kB(self) -> MutableSequence[bool]:
+    def kB(self) -> "MutableSequence[bool]":
         raise self._te()
 
-    def kG(self) -> MutableSequence[int]:
+    def kG(self) -> "MutableSequence[int]":
         raise self._te()
 
-    def kH(self) -> MutableSequence[int]:
+    def kH(self) -> "MutableSequence[int]":
         raise self._te()
 
-    def kI(self) -> MutableSequence[int]:
+    def kI(self) -> "MutableSequence[int]":
         raise self._te()
 
-    def kJ(self) -> MutableSequence[int]:
+    def kJ(self) -> "MutableSequence[int]":
         raise self._te()
 
-    def kE(self) -> MutableSequence[float]:
+    def kE(self) -> "MutableSequence[float]":
         raise self._te()
 
-    def kF(self) -> MutableSequence[float]:
+    def kF(self) -> "MutableSequence[float]":
         raise self._te()
 
     def kC(self) -> array.array:  # type: ignore[type-arg]
         raise self._te()
 
-    def kS(self) -> Sequence[str]:
+    def kS(self) -> "Sequence[str]":
         raise self._te()
 
     # dictionary/flip
@@ -264,7 +264,7 @@ class KObj:
         raise self._te()
 
     # deserialise content from stream
-    def frombytes(self, data: bytes, offset: int) -> tuple["KObj", int]:
+    def frombytes(self, data: bytes, offset: int) -> Tuple["KObj", int]:
         raise self._te()
 
     def __eq__(self, other: Any) -> bool:
@@ -397,7 +397,7 @@ class KObjAtom(KObj):
         assert len(self.data) == ATOM_LENGTH[-self.t]
         return super()._paysz() + ATOM_LENGTH[-self.t]
 
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         bs = ATOM_LENGTH[-self.t]
         self.data = data[offset : offset + bs]
         return self, offset + bs
@@ -433,7 +433,7 @@ class KSymAtom(KObj):
     def _paysz(self) -> int:
         return super()._paysz() + len(self.context.symbols_enc[self.aI()][1])
 
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         bs = data[offset:].index(b"\x00") + 1
         self.ss(data[offset : offset + bs - 1].decode("ascii"))
         return self, offset + bs
@@ -461,19 +461,19 @@ class KErrAtom(KObj):
     def _paysz(self) -> int:
         return super()._paysz() + len(self.data)
 
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         bs = data[offset:].index(b"\x00") + 1
         self.data = data[offset : offset + bs - 1]
         return self, offset + bs
 
 
 class KRangedType(KObj):
-    def frombytes(self, data: bytes, offset: int) -> tuple[KObj, int]:
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         attrib, sz = struct.unpack_from("<BI", data, offset=offset)
         self.attrib = attrib
         return self._ranged_frombytes(sz, data, offset + 5)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         raise self._te()
 
 
@@ -490,13 +490,13 @@ class KByteArray(KRangedType):
             f"<{len(self._g)}B", *self._g
         )
 
-    def kG(self) -> MutableSequence[int]:
+    def kG(self) -> "MutableSequence[int]":
         return self._g
 
     def __len__(self) -> int:
         return len(self._g)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._g = array.array("B", data[offset : offset + sz])
         return self, offset + sz
 
@@ -514,13 +514,13 @@ class KShortArray(KRangedType):
             f"<{len(self._h)}H", *self._h
         )
 
-    def kH(self) -> MutableSequence[int]:
+    def kH(self) -> "MutableSequence[int]":
         return self._h
 
     def __len__(self) -> int:
         return len(self._h)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._h = array.array("h", data[offset : offset + 2 * sz])
         return self, offset + 2 * sz
 
@@ -544,13 +544,13 @@ class KIntArray(KRangedType):
             pi = struct.pack(f"<{len(self._i)}I", *self._i)
         return struct.pack("<bBI", self.t, self.attrib, len(self._i)) + pi
 
-    def kI(self) -> MutableSequence[int]:
+    def kI(self) -> "MutableSequence[int]":
         return self._i
 
     def __len__(self) -> int:
         return len(self._i)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         o2 = offset + 4 * sz
         if self._i.itemsize == 4:
             self._i = array.array("l", data[offset:o2])
@@ -573,7 +573,7 @@ class KIntSymArray(KIntArray):
             parts.append(self.context.symbols_enc[j][1])
         return b"".join(parts)
 
-    def kS(self) -> Sequence[str]:
+    def kS(self) -> "Sequence[str]":
         # Warning: accessor read-only
         s = []
         for j in self._i:
@@ -589,7 +589,7 @@ class KIntSymArray(KIntArray):
     def __len__(self) -> int:
         return len(self._i)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._i = array.array("l", [0] * sz)
         for i in range(sz):
             bs = data[offset:].index(b"\x00") + 1
@@ -613,13 +613,13 @@ class KLongArray(KRangedType):
             f"<{len(self._j)}q", *self._j
         )
 
-    def kJ(self) -> MutableSequence[int]:
+    def kJ(self) -> "MutableSequence[int]":
         return self._j
 
     def __len__(self) -> int:
         return len(self._j)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._j = array.array("q", data[offset : offset + 8 * sz])
         return self, offset + 8 * sz
 
@@ -637,13 +637,13 @@ class KFloatArray(KRangedType):
             f"<{len(self._e)}f", *self._e
         )
 
-    def kE(self) -> MutableSequence[float]:
+    def kE(self) -> "MutableSequence[float]":
         return self._e
 
     def __len__(self) -> int:
         return len(self._e)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._e = array.array("f", data[offset : offset + 4 * sz])
         return self, offset + 4 * sz
 
@@ -661,13 +661,13 @@ class KDoubleArray(KRangedType):
             f"<{len(self._f)}d", *self._f
         )
 
-    def kF(self) -> MutableSequence[float]:
+    def kF(self) -> "MutableSequence[float]":
         return self._f
 
     def __len__(self) -> int:
         return len(self._f)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._f = array.array("d", data[offset : offset + 8 * sz])
         return self, offset + 8 * sz
 
@@ -693,7 +693,7 @@ class KCharArray(KRangedType):
     def __len__(self) -> int:
         return len(self._c)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         s = data[offset : offset + sz].decode("ascii")
         self._c = array.array("u", [])
         self._c.fromunicode(s)
@@ -703,7 +703,7 @@ class KCharArray(KRangedType):
 class KObjArray(KRangedType):
     def __init__(self, t: int = TypeEnum.K) -> None:
         super().__init__(0)
-        self._k: list[KObj] = []
+        self._k: List[KObj] = []
 
     def _paysz(self) -> int:
         # sum sizes nested ks
@@ -714,13 +714,13 @@ class KObjArray(KRangedType):
         parts.extend(ko._databytes() for ko in self._k)
         return b"".join(parts)
 
-    def kK(self) -> MutableSequence[KObj]:
+    def kK(self) -> "MutableSequence[KObj]":
         return self._k
 
     def __len__(self) -> int:
         return len(self._k)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         for i in range(sz):
             obj, offset = _d9_unpackfrom(data, offset)
             self._k.append(obj)
@@ -730,7 +730,7 @@ class KObjArray(KRangedType):
 class KUUIDArray(KRangedType):
     def __init__(self, t: int = TypeEnum.UU, sz: int = 0, attr: int = 0) -> None:
         super().__init__(TypeEnum.UU)
-        self._u: list[uuid.UUID] = [uuid.UUID(int=0)] * sz
+        self._u: List[uuid.UUID] = [uuid.UUID(int=0)] * sz
 
     def _paysz(self) -> int:
         # sum sizes nested ks
@@ -741,13 +741,13 @@ class KUUIDArray(KRangedType):
         parts.extend(uu.bytes for uu in self._u)
         return b"".join(parts)
 
-    def kU(self) -> MutableSequence[uuid.UUID]:
+    def kU(self) -> "MutableSequence[uuid.UUID]":
         return self._u
 
     def __len__(self) -> int:
         return len(self._u)
 
-    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> tuple[KObj, int]:
+    def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         for i in range(sz):
             start = offset + i * 16
             self._u.append(uuid.UUID(bytes=data[start : start + 16]))
@@ -785,7 +785,7 @@ def d9(data: bytes) -> KObj:
     return k
 
 
-def _d9_unpackfrom(data: bytes, offset: int) -> tuple[KObj, int]:
+def _d9_unpackfrom(data: bytes, offset: int) -> Tuple[KObj, int]:
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
     logger.debug(f" at offset {offset}/{len(data)} unpacking type {tn(t)}")
@@ -853,7 +853,7 @@ def kuu(uu: uuid.UUID) -> KObj:
 
 
 # vector constructors
-VECTOR_CONSTUCTORS: dict[TypeEnum, Type[KObj]] = {
+VECTOR_CONSTUCTORS: Dict[TypeEnum, Type[KObj]] = {
     TypeEnum.K: KObjArray,
     TypeEnum.KB: KByteArray,
     TypeEnum.KG: KByteArray,
@@ -993,11 +993,11 @@ class KFlip(KObj):
         except ValueError:
             raise KeyError(f"Column not found {item}")
 
-    def kS(self) -> Sequence[str]:
+    def kS(self) -> "Sequence[str]":
         # column names
         return self.kvalue().kkey().kS()
 
-    def kK(self) -> MutableSequence[KObj]:
+    def kK(self) -> "MutableSequence[KObj]":
         # column values
         return self.kvalue().kvalue().kK()
 

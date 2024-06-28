@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import logging
 import struct
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from aiokdb import cv, logger
 from aiokdb.server import CredentialsException, KdbReader, KdbWriter
@@ -15,7 +15,7 @@ async def open_qipc_connection(
     user: Optional[str] = None,
     password: Optional[str] = None,
     ver: int = 3,
-) -> tuple[KdbReader, KdbWriter]:
+) -> Tuple[KdbReader, KdbWriter]:
     reader, writer = await asyncio.open_connection(host, port)
 
     auth = ""

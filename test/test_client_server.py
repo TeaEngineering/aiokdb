@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 
 from aiokdb import KException, KObj, MessageType, cv, kj
@@ -102,7 +104,7 @@ async def test_server_async() -> None:
         port=6778, user="troy", password="tangoxray"
     )
 
-    ooob: list[KObj] = []
+    ooob: List[KObj] = []
     kr = await client_wr.sync_req(cv("1+2"), ooob=ooob.append)
     assert kr.aJ() == 2
 

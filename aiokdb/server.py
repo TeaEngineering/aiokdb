@@ -23,7 +23,7 @@ class KdbReader:
         self.reader = reader
         self.raise_krr = raise_krr
 
-    async def read(self) -> tuple[MessageType, KObj]:
+    async def read(self) -> Tuple[MessageType, KObj]:
         msgh = await self.reader.readexactly(8)
         ver, msgtype, flags, msglen = struct.unpack("<BBHI", msgh)
         logger.debug(
@@ -233,7 +233,7 @@ async def handle_connection(
 
 async def start_qserver(
     port: int, context: ServerContext, periodic: bool = False
-) -> asyncio.Server:
+) -> Any:
     logging.info(f"opening KDB-q IPC server on port {port}")
     if periodic:
         await context.start_tasks()
