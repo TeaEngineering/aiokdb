@@ -1,6 +1,6 @@
 import itertools
 from datetime import datetime, timezone
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, List, Optional, Sequence
 
 from aiokdb import KObj, Nulls, TypeEnum
 
@@ -79,16 +79,16 @@ class AsciiFormatter:
         filler = [" ", "-"] + [" "] * len(rows)
         return "\n".join(f"{ll}|{g}{rr}" for g, ll, rr in zip(filler, left, right))
 
-    def _format_table_rows(self, obj: KObj, rows: Iterable[Optional[int]]) -> list[str]:
+    def _format_table_rows(self, obj: KObj, rows: Iterable[Optional[int]]) -> List[str]:
         d1 = obj.kvalue()
 
         colNames: Sequence[str] = d1.kkey().kS()
         kv = d1.kvalue().kK()
 
-        colWidths: list[int] = list(map(len, colNames))
+        colWidths: List[int] = list(map(len, colNames))
 
         # stringify all cells within our rowiter
-        rowSample: list[list[str]] = []
+        rowSample: List[List[str]] = []
         for r in rows:
             cs = []
             for c in range(len(colNames)):
