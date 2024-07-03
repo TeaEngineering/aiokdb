@@ -145,10 +145,11 @@ async def process_login(
     else:
         ver = 0
         auth = data[0:-1].decode()
+    password: Optional[str] = None
     if ":" in auth:
         user, password = auth.split(":", maxsplit=1)
     else:
-        user, password = auth, None
+        user = auth
     pwstars = "*" * len(password) if password is not None else password
     logging.info(f"{qid} process_login ver={ver} user={user} password={pwstars}")
 
