@@ -380,3 +380,7 @@ def test_table_uuid_str_column() -> None:
     kt.kvalue()["payload"].kK().append(cv("xy"))
     kt.kvalue()["time"].kJ().append(769043599044908000)
     assert b9(kt).hex() == exp.hex()
+
+
+def test_ktni_with_timestamp() -> None:
+    ktni(TypeEnum.KP, 769043599044908000)

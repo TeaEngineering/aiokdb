@@ -1,4 +1,4 @@
-from aiokdb import KObj, TypeEnum, ktn, tn
+from aiokdb import KIntArray, KLongArray, KObj, TypeEnum, ktn, tn
 
 # these are python friendly constructors for vector types, incomplete
 # not sure if there is a better way
@@ -10,9 +10,9 @@ def ktni(t: TypeEnum, *ints: int) -> KObj:
         v.kG().extend(ints)
     elif t == TypeEnum.KH:
         v.kH().extend(ints)
-    elif t == TypeEnum.KI:
+    elif isinstance(v, KIntArray):
         v.kI().extend(ints)
-    elif t == TypeEnum.KJ:
+    elif isinstance(v, KLongArray):
         v.kJ().extend(ints)
     else:
         raise ValueError(f"No int array initialiser for {tn(t)}")
