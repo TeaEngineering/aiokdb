@@ -76,6 +76,10 @@ class KdbWriter:
             else:
                 logging.warning(f"recieved {msgtype} whilst awaiting response.")
 
+    async def async_msg(self, obj: KObj) -> None:
+        # this method is a shortcut to avoid having to import MessageType
+        self.write(obj, MessageType.ASYNC)
+
     def close(self) -> None:
         self.writer.close()
 
