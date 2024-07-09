@@ -24,7 +24,7 @@ from aiokdb import (
     xd,
     xt,
 )
-from aiokdb.extras import ktni, ktns
+from aiokdb.extras import ktni, ktns, ktnu
 
 
 def h2b(hx: str) -> bytes:
@@ -382,5 +382,14 @@ def test_table_uuid_str_column() -> None:
     assert b9(kt).hex() == exp.hex()
 
 
-def test_ktni_with_timestamp() -> None:
-    ktni(TypeEnum.KP, 769043599044908000)
+def test_vector_extras() -> None:
+    d9(b9(ktni(TypeEnum.KP, 769043599044908000))).kJ()[0] == 769043599044908000
+
+    a = uuid.uuid4()
+    b = uuid.uuid4()
+    assert d9(b9(ktnu(a, b))).kU() == [a, b]
+
+
+def test_kk() -> None:
+    with pytest.raises(ValueError, match="not KObj: None"):
+        kk(kj(4), None)  # type: ignore

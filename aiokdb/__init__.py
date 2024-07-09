@@ -888,6 +888,9 @@ def ktn(t: TypeEnum, sz: int = 0, attr: AttrEnum = AttrEnum.NONE) -> KObj:
 
 
 def kk(*objs: KObj) -> KObj:
+    for o in objs:
+        if not isinstance(o, KObj):
+            raise ValueError(f"not KObj: {o}")
     k = ktn(TypeEnum.K)
     k.kK().extend(objs)
     return k

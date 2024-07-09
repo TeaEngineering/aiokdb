@@ -1,3 +1,5 @@
+import uuid
+
 from aiokdb import KIntArray, KLongArray, KObj, TypeEnum, ktn, tn
 
 # these are python friendly constructors for vector types, incomplete
@@ -26,4 +28,10 @@ def ktns(t: TypeEnum, *ss: str) -> KObj:
             v.appendS(s)
     else:
         raise ValueError(f"No str array initialiser for {tn(t)}")
+    return v
+
+
+def ktnu(*uuids: uuid.UUID) -> KObj:
+    v = ktn(TypeEnum.UU)
+    v.kU().extend(uuids)
     return v
