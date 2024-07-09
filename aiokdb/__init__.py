@@ -931,6 +931,15 @@ class KDict(KObj):
     def kvalue(self) -> KObj:
         return self._kvalue
 
+    def kS(self) -> "Sequence[str]":
+        # key names
+        if self._kkey.t == TypeEnum.KS:
+            return self.kkey().kS()
+        elif self._kkey.t == TypeEnum.K:
+            ks = self.kkey().kK()
+            return [ks[idx].aS() for idx in range(len(self._kkey))]
+        raise KeyError(f"Keys as strings not possible on {self._kkey._tn()}")
+
     def __getitem__(self, item: str) -> KObj:
         if self._kkey.t == TypeEnum.KS:
             try:

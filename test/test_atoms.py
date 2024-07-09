@@ -256,6 +256,7 @@ def test_dict_checks() -> None:
     assert len(d) == 2
     d["key1"].t == TypeEnum.KJ
     assert d["key1"].aJ() == 1
+    assert d.kS() == ["key1", "key2"]
 
     k = ktn(TypeEnum.KH, sz=2)
     v = ktn(TypeEnum.KH, sz=1)
