@@ -936,8 +936,8 @@ class KDict(KObj):
         if self._kkey.t == TypeEnum.KS:
             return self.kkey().kS()
         elif self._kkey.t == TypeEnum.K:
-            ks = self.kkey().kK()
-            return [ks[idx].aS() for idx in range(len(self._kkey))]
+            return [k.aS() for k in self.kkey().kK()]
+
         raise KeyError(f"Keys as strings not possible on {self._kkey._tn()}")
 
     def __getitem__(self, item: str) -> KObj:
