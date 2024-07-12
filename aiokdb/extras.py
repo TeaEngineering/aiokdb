@@ -1,8 +1,9 @@
+import inspect
 import re
 import uuid
 from typing import cast
 
-from aiokdb import KIntArray, KLongArray, KObj, TypeEnum, kb, kj, kk, ks, ktn, tn
+from aiokdb import KIntArray, KLongArray, KObj, TypeEnum, kb, kj, kk, kNil, ks, ktn, tn
 from aiokdb.server import KdbWriter, ServerContext
 
 
@@ -54,18 +55,22 @@ def _string_to_functional(cmd: KObj) -> KObj:
         raise ValueError("error parsing: {}".format(cmd))
 
     functional = [ks(result.group(1))]
-    cmd_args = result.group(2).split(";")
-    for arg in cmd_args:
-        if arg[0] == "`":
-            # symbol
-            functional.append(ks(arg[1:]))
-        elif len(arg) == 2 and arg[1] == "b":
-            # bool atom
-            functional.append(kb(False if arg[0] == "0" else True))
-        elif arg.isnumeric():
-            functional.append(kj(int(arg)))
-        else:
-            raise ValueError(f"error parsing arg: {arg} in command {c}")
+    if result.group(2):
+        cmd_args = result.group(2).split(";")
+        print(cmd_args)
+        for arg in cmd_args:
+            if len(arg) > 1 and arg[0] == "`":
+                # symbol
+                functional.append(ks(arg[1:]))
+            elif len(arg) == 2 and arg[1] == "b":
+                # bool atom
+                functional.append(kb(False if arg[0] == "0" else True))
+            elif arg.isnumeric():
+                functional.append(kj(int(arg)))
+            else:
+                raise ValueError(f"error parsing arg: {arg} in command {c}")
+    else:
+        functional.append(kNil)
     return kk(*functional)
 
 
@@ -88,6 +93,9 @@ class MagicServerContext(ServerContext):
         fnpy = fn.lstrip(".").replace(".", "__")  # drop initial dot, snake dots
         try:
             f = getattr(self, fnpy)
-            return cast(KObj, f(args, dotzw))
+            k = f(args, dotzw)
+            if inspect.isawaitable(k):
+                return cast(KObj, await k)
+            return cast(KObj, k)
         except AttributeError:
             raise ValueError(f"No python function {fnpy} found from {fn}")

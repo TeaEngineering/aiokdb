@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from aiokdb import KException, KObj, MessageType, TypeEnum, cv, kj
+from aiokdb import KException, KObj, MessageType, TypeEnum, cv, kj, kNil
 from aiokdb.client import open_qipc_connection
 from aiokdb.extras import MagicServerContext, _string_to_functional
 from aiokdb.server import CredentialsException, KdbWriter, ServerContext, start_qserver
@@ -138,19 +138,33 @@ def test_extras_parse_commands() -> None:
     assert bits[3].aS() == "silly"
     assert bits[4].aB() is False
 
+    # KDB doesn't have no argument functions, they are passed [::]
+    k = _string_to_functional(cv("regular.function[]"))
+    assert len(k) == 2
+    assert k.t == TypeEnum.K
+    bits = k.kK()
+    assert bits[0].aS() == "regular.function"
+    assert bits[1] is kNil
+
 
 @pytest.mark.asyncio
 async def test_extras_MagicServerContext() -> None:
     # defining the function within a MagicServerContext is enough to make it callable
     class MyContext(MagicServerContext):
-        def mynamespace__myfunction(self, args: KObj, dotzw: KdbWriter) -> KObj:
+        async def mynamespace__myfunction(self, args: KObj, dotzw: KdbWriter) -> KObj:
             return kj(args.kK()[0].aJ())
+
+        def regular__function(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            return kj(34)
 
     server = await start_qserver(6778, MyContext())
     client_rd, client_wr = await open_qipc_connection(port=6778)
 
     kr = await client_wr.sync_req(cv(".mynamespace.myfunction[45]"))
     assert kr.aJ() == 45
+
+    kr = await client_wr.sync_req(cv("regular.function[]"))
+    assert kr.aJ() == 34
 
     with pytest.raises(
         KException,
