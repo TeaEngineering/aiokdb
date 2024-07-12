@@ -1,4 +1,4 @@
-set +e
+set -e
 ruff check .
 ruff format .
 mypy --strict .

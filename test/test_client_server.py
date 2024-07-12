@@ -2,8 +2,9 @@ from typing import List
 
 import pytest
 
-from aiokdb import KException, KObj, MessageType, cv, kj
+from aiokdb import KException, KObj, MessageType, TypeEnum, cv, kj
 from aiokdb.client import open_qipc_connection
+from aiokdb.extras import MagicServerContext, _string_to_functional
 from aiokdb.server import CredentialsException, KdbWriter, ServerContext, start_qserver
 
 
@@ -110,6 +111,52 @@ async def test_server_async() -> None:
 
     assert len(ooob) == 1
     assert ooob[0].aJ() == 1
+
+    client_wr.close()
+    await client_wr.wait_closed()
+
+    server.close()
+    await server.wait_closed()
+
+
+def test_extras_parse_commands() -> None:
+    with pytest.raises(ValueError):
+        _string_to_functional(kj(4))
+
+    with pytest.raises(ValueError):
+        _string_to_functional("bare string not KObj")  # type: ignore
+
+    c = cv("blah[3;45;`silly;0b]")
+    k = _string_to_functional(c)
+
+    assert len(k) == 5
+    assert k.t == TypeEnum.K
+    bits = k.kK()
+    assert bits[0].aS() == "blah"
+    assert bits[1].aJ() == 3
+    assert bits[2].aJ() == 45
+    assert bits[3].aS() == "silly"
+    assert bits[4].aB() is False
+
+
+@pytest.mark.asyncio
+async def test_extras_MagicServerContext() -> None:
+    # defining the function within a MagicServerContext is enough to make it callable
+    class MyContext(MagicServerContext):
+        def mynamespace__myfunction(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            return kj(args.kK()[0].aJ())
+
+    server = await start_qserver(6778, MyContext())
+    client_rd, client_wr = await open_qipc_connection(port=6778)
+
+    kr = await client_wr.sync_req(cv(".mynamespace.myfunction[45]"))
+    assert kr.aJ() == 45
+
+    with pytest.raises(
+        KException,
+        match="No python function mynamespace__notafunction found from .mynamespace.notafunction",
+    ):
+        await client_wr.sync_req(cv(".mynamespace.notafunction[45]"))
 
     client_wr.close()
     await client_wr.wait_closed()
