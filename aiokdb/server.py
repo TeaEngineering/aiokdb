@@ -23,7 +23,7 @@ class KdbReader:
         self.reader = reader
         self.raise_krr = raise_krr
 
-    async def read(self) -> Tuple[MessageType, KObj]:
+    async def _read(self) -> Tuple[MessageType, KObj]:
         msgh = await self.reader.readexactly(8)
         ver, msgtype, flags, msglen = struct.unpack("<BBHI", msgh)
         logger.debug(
@@ -31,6 +31,10 @@ class KdbReader:
         )
         payload = await self.reader.readexactly(msglen - 8)
         k = d9(msgh + payload)
+        return msgtype, k
+
+    async def read(self) -> Tuple[MessageType, KObj]:
+        msgtype, k = await self._read()
         if self.raise_krr and k.t == TypeEnum.KRR:
             raise KException(k.aS())
         return msgtype, k
@@ -81,7 +85,7 @@ class KdbWriter:
         if self._context is None:
             # with a lock...
             while True:
-                msgtype, k = await self.reader.read()
+                msgtype, k = await self.reader._read()
                 if msgtype == MessageType.RESPONSE:
                     self.on_response(k)
                     break
@@ -94,10 +98,16 @@ class KdbWriter:
 
         return await f
 
-    def on_response(self, obj: KObj) -> None:
+    def on_response(self, k: KObj) -> None:
         # if this raises IndexError a RESPONSE message has been recieved
         # when we did not make a SYNC request.
-        self._completions.pop(0).set_result(obj)
+        f = self._completions.pop(0)
+
+        # handle KRR through the Future exception system
+        if self.reader.raise_krr and k.t == TypeEnum.KRR:
+            f.set_exception(KException(k.aS()))
+        else:
+            f.set_result(k)
 
     async def async_msg(self, obj: KObj) -> None:
         # this method is a shortcut to avoid having to import MessageType
@@ -194,7 +204,7 @@ async def reader_to_context_task(
     context.writer_available(q_writer)
     try:
         while not q_writer.writer.is_closing():
-            mtype, cmd = await q_reader.read()
+            mtype, cmd = await q_reader._read()
             if mtype == MessageType.SYNC:
                 logging.info(f"{q_writer.qid} command {cmd}")
                 try:

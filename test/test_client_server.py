@@ -172,6 +172,8 @@ async def test_extras_MagicServerContext() -> None:
     ):
         await client_wr.sync_req(cv(".mynamespace.notafunction[45]"))
 
+    assert (await client_wr.sync_req(cv("regular.function[]"))).aJ() == 34
+
     client_wr.close()
     await client_wr.wait_closed()
 
@@ -187,6 +189,9 @@ async def test_server_calls_client() -> None:
         async def storehandle(self, args: KObj, dotzw: KdbWriter) -> KObj:
             self.stored_handle = dotzw
             return kNil
+
+        async def checkafter(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            return kj(32)
 
     server = await start_qserver(6778, tsc := TestServerContext())
 
@@ -205,6 +210,8 @@ async def test_server_calls_client() -> None:
 
     # call client method from the server
     assert (await tsc.stored_handle.sync_req(cv("dosums[]"))).aJ() == 42
+
+    assert (await client_wr.sync_req(cv("checkafter[]"))).aJ() == 32
 
     client_wr.close()
     await client_wr.wait_closed()
