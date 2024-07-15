@@ -5,7 +5,17 @@ import struct
 from typing import Any, Optional, Tuple
 
 from aiokdb import cv, logger
-from aiokdb.server import CredentialsException, KdbReader, KdbWriter
+from aiokdb.server import (
+    BaseContext,
+    CredentialsException,
+    KdbReader,
+    KdbWriter,
+    reader_to_context_task,
+)
+
+
+class ClientContext(BaseContext):
+    pass
 
 
 # KDB client code
@@ -14,6 +24,7 @@ async def open_qipc_connection(
     port: int = 8890,
     user: Optional[str] = None,
     password: Optional[str] = None,
+    context: Optional[ClientContext] = None,
     ver: int = 3,
 ) -> Tuple[KdbReader, KdbWriter]:
     reader, writer = await asyncio.open_connection(host, port)
@@ -37,7 +48,9 @@ async def open_qipc_connection(
         raise CredentialsException(e)
 
     q_reader = KdbReader(reader)
-    q_writer = KdbWriter(writer, q_reader, version=remote_ver)
+    q_writer = KdbWriter(writer, q_reader, version=remote_ver, context=context)
+    if context is not None:
+        asyncio.create_task(reader_to_context_task(q_writer, q_reader, context))
     return q_reader, q_writer
 
 

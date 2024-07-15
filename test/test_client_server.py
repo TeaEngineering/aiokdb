@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional
 
 import pytest
 
 from aiokdb import KException, KObj, MessageType, TypeEnum, cv, kj, kNil
 from aiokdb.client import open_qipc_connection
-from aiokdb.extras import MagicServerContext, _string_to_functional
+from aiokdb.extras import MagicClientContext, MagicServerContext, _string_to_functional
 from aiokdb.server import CredentialsException, KdbWriter, ServerContext, start_qserver
 
 
@@ -171,6 +171,40 @@ async def test_extras_MagicServerContext() -> None:
         match="No python function mynamespace__notafunction found from .mynamespace.notafunction",
     ):
         await client_wr.sync_req(cv(".mynamespace.notafunction[45]"))
+
+    client_wr.close()
+    await client_wr.wait_closed()
+
+    server.close()
+    await server.wait_closed()
+
+
+@pytest.mark.asyncio
+async def test_server_calls_client() -> None:
+    class TestServerContext(MagicServerContext):
+        stored_handle: Optional[KdbWriter] = None
+
+        async def storehandle(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            self.stored_handle = dotzw
+            return kNil
+
+    server = await start_qserver(6778, tsc := TestServerContext())
+
+    class TestClientContext(MagicClientContext):
+        async def dosums(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            return kj(42)
+
+    client_rd, client_wr = await open_qipc_connection(
+        port=6778, user="troy", password="tangoxray", context=TestClientContext()
+    )
+
+    assert tsc.stored_handle is None
+    kr = await client_wr.sync_req(cv("storehandle[]"))
+    assert kr == kNil
+    assert tsc.stored_handle is not None
+
+    # call client method from the server
+    assert (await tsc.stored_handle.sync_req(cv("dosums[]"))).aJ() == 42
 
     client_wr.close()
     await client_wr.wait_closed()

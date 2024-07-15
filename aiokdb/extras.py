@@ -4,6 +4,7 @@ import uuid
 from typing import cast
 
 from aiokdb import KIntArray, KLongArray, KObj, TypeEnum, kb, kj, kk, kNil, ks, ktn, tn
+from aiokdb.client import ClientContext
 from aiokdb.server import KdbWriter, ServerContext
 
 
@@ -40,7 +41,7 @@ def ktnu(*uuids: uuid.UUID) -> KObj:
     return v
 
 
-# We assume commands of this pattern "func[arg1;arg2;argetc]"
+# We assume commands of this pattern "func[arg1;arg2;argN]"
 # which we convert to a k-array with symbol as the first argument, and remaining
 # arguments (badly) converted to k-atoms. KDBs parser is a work of art, and this is
 # admittedly a poor immitation.
@@ -77,7 +78,7 @@ def _string_to_functional(cmd: KObj) -> KObj:
 # this tries to offer basic eval support for function dispatch within a server
 # users expect the input to the server to hit eval, which will parse the arguments to
 # kdb types, then dispatch to a function.
-class MagicServerContext(ServerContext):
+class MagicContext:
     async def on_sync_request(self, cmd: KObj, dotzw: KdbWriter) -> KObj:  # .z.pg
         # kdb clients usually present RPC to server as a string, evaluated
         # with value, although it is possible to have arbitary objects here
@@ -99,3 +100,11 @@ class MagicServerContext(ServerContext):
             return cast(KObj, k)
         except AttributeError:
             raise ValueError(f"No python function {fnpy} found from {fn}")
+
+
+class MagicServerContext(MagicContext, ServerContext):
+    pass
+
+
+class MagicClientContext(MagicContext, ClientContext):
+    pass
