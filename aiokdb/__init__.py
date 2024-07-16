@@ -6,6 +6,8 @@ import uuid
 from collections.abc import MutableSequence, Sequence
 from typing import Any, Dict, List, Tuple, Type, Union, cast
 
+from aiokdb.adapter import BoolByteAdaptor
+
 __all__ = [
     "b9",
     "d9",
@@ -492,6 +494,9 @@ class KByteArray(KRangedType):
 
     def kG(self) -> "MutableSequence[int]":
         return self._g
+
+    def kB(self) -> "MutableSequence[bool]":
+        return BoolByteAdaptor(self._g)
 
     def __len__(self) -> int:
         return len(self._g)

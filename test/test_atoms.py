@@ -24,7 +24,7 @@ from aiokdb import (
     xd,
     xt,
 )
-from aiokdb.extras import ktni, ktns, ktnu
+from aiokdb.extras import ktnb, ktni, ktns, ktnu
 
 
 def h2b(hx: str) -> bytes:
@@ -384,11 +384,13 @@ def test_table_uuid_str_column() -> None:
 
 
 def test_vector_extras() -> None:
-    d9(b9(ktni(TypeEnum.KP, 769043599044908000))).kJ()[0] == 769043599044908000
+    assert d9(b9(ktni(TypeEnum.KP, 769043599044908000))).kJ()[0] == 769043599044908000
 
     a = uuid.uuid4()
     b = uuid.uuid4()
     assert d9(b9(ktnu(a, b))).kU() == [a, b]
+
+    assert d9(b9(ktnb(True, False, True))).kB() == [True, False, True]
 
 
 def test_kk() -> None:

@@ -41,6 +41,12 @@ def ktnu(*uuids: uuid.UUID) -> KObj:
     return v
 
 
+def ktnb(*bools: bool) -> KObj:
+    v = ktn(TypeEnum.KB)
+    v.kB().extend(bools)
+    return v
+
+
 # We assume commands of this pattern "func[arg1;arg2;argN]"
 # which we convert to a k-array with symbol as the first argument, and remaining
 # arguments (badly) converted to k-atoms. KDBs parser is a work of art, and this is
