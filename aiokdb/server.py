@@ -185,7 +185,7 @@ async def process_login(
         user, password = auth.split(":", maxsplit=1)
     else:
         user = auth
-    pwstars = "*" * len(password) if password is not None else password
+    pwstars = "*" * len(password) if password is not None else "None"
     logging.info(f"{qid} process_login ver={ver} user={user} password={pwstars}")
 
     if not context.check_login(user, password):
