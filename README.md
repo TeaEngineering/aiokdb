@@ -12,17 +12,18 @@ This library takes a different approach and aims to replicate using the KDB C-li
 A simple example, using blocking sockets:
 
 ```python
-from aiokdb.socket import khpu
 # run ./q -p 12345 &
+
+from aiokdb.socket import khpu
 
 h = khpu("localhost", 12345, "kdb:pass")
 
-# if the remote returns a Q Exception, this gets raised here, unless khpu(..., raise_krr=False)
+# if remote returns Exception, it is raised here, unless khpu(..., raise_krr=False)
 result = h.k("2.0+3.0")
 
 assert result.aF() == 5.0
-# raises ValueError: wrong type KF (-9) for aJ
-result.aJ()
+
+result.aJ() # raises ValueError: wrong type KF (-9) for aJ
 ````
 
 The `result` object is a K-like Python object (a `KObj`), having the usual signed integer type available as `result.type`. Accessors for the primitive types are prefixed with an `a` and check at runtime that the accessor is appropriate for the stored type (`.aI()`, `.aJ()`, `.aH()`, `.aF()` etc.). Atoms store their value to a `bytes` object irrespective of the type, and encode/decode on demand. Atomic values can be set with (`.i(3)`, `.j(12)`, `.ss("hello")`).
