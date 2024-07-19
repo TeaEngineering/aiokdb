@@ -1,4 +1,5 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/TeaEngineering/aiokdb/check.yml) [![PyPI version](https://badge.fury.io/py/aiokdb.svg)](https://badge.fury.io/py/aiokdb)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FTeaEngineering%2Faiokdb.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FTeaEngineering%2Faiokdb?ref=badge_shield)
 
 # aiokdb
 Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bindings or kdb shared objects, or numpy/pandas. Fully type hinted to comply with `PEP-561`. No non-core dependencies, and tested on Python 3.8 - 3.12.
@@ -90,3 +91,7 @@ The library has extensive test coverage, however de-serialisation of certain (ob
 * Formatting with `ruff format .`
 * Check type annotations with `mypy --strict .`
 * Run `pytest .` in the root directory
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FTeaEngineering%2Faiokdb.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FTeaEngineering%2Faiokdb?ref=badge_large)
