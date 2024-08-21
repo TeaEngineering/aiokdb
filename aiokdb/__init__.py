@@ -491,6 +491,7 @@ class KRangedType(KObj):
     def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         attrib, sz = struct.unpack_from("<BI", data, offset=offset)
         self.attrib = attrib
+        logger.debug(f" frombytes for ranged type attrib={attrib} sz={sz}")
         return self._ranged_frombytes(sz, data, offset + 5)
 
     def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
@@ -1065,7 +1066,7 @@ def decompress(data: bytes) -> bytes:
     # however with a much smaller window for the hash function (2 bytes) and only 256 slots
 
     uncomp_sz = struct.unpack("I", data[0:4])[0] - 8
-    # print(f"decompressing: compressed {len(_data)} -> uncompressed {uncomp_sz}")
+    logger.debug(f"decompressing: {len(data)} compressed bytes to {uncomp_sz} bytes")
 
     # compressed stream repeats: control byte (8 single-bit instructions), followed by 8-16 data bytes.
     # Bits of the control byte are examined bit-by-bit from least significant:
@@ -1095,7 +1096,7 @@ def decompress(data: bytes) -> bytes:
             # {ptr}{sz} copy n bytes (sz+2) from uncompressed history pointer r (ptr)
             r = hashpos[data[d]]
             n = data[d + 1]
-            # print(f"instr pos {i} is copy history hashpos {data[d]} -> index {r} len {2+n}")
+            # print(f"instr {i} hist d={d} slot {data[d]}, copy pos={r} len={2+n} to {s}")
             # DO NOT USE SLICE ASSIGNMENT HERE, AS A HISTORY REFERENCE CAN COPY OWN OUTPUT
             # ie. start 8 bytes back and copy 64 bytes, gives 8x repeating 8 bytes
             for m in range(2 + n):
@@ -1104,7 +1105,7 @@ def decompress(data: bytes) -> bytes:
             s += 2
 
         else:  # copy 1 byte from compressed stream to uncomp
-            #  print(f"instr pos {i} literal copy byte d={d} value {data[d:d+1].hex()}")
+            # print(f"instr {i} literal d={d} value {data[d:d+1].hex()} to pos {s}")
             dst[s] = data[d]
             n = 0
             d += 1
@@ -1112,14 +1113,16 @@ def decompress(data: bytes) -> bytes:
 
         while p < s - 1:
             hashv = dst[p] ^ dst[p + 1]
-            # print(f"hashpos slot {hashv} set to p={p} writepos {s}")
+            # print(f" hash slot {hashv} set to p={p}")
             hashpos[hashv] = p
             p += 1
 
         # only first two bytes of a copied range are used to update the hash
         # jump s and p over the remaining copied range (n)
         s += n
-        p += n
+        if f & i:
+            p = s
+
         # next control bit
         i = (i << 1) & 255
 
