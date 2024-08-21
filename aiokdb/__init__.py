@@ -1123,4 +1123,7 @@ def decompress(data: bytes) -> bytes:
         # next control bit
         i = (i << 1) & 255
 
-    return dst
+    # Note that cpython is overly restrictive in the uuid.UUID(bytes=...) call and will not
+    # allow a bytearray, so now decompression is done convert it once to immutable bytes object.
+    #  https://github.com/python/cpython/blob/8edfa0b0b4ae4235bb3262d952c23e7581516d4f/Lib/uuid.py#L188
+    return bytes(dst)
