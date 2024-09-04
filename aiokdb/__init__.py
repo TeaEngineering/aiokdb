@@ -7,6 +7,7 @@ from collections.abc import MutableSequence, Sequence
 from typing import Any, Dict, List, Tuple, Type, Union, cast
 
 from aiokdb.adapter import BoolByteAdaptor
+from aiokdb.compress import decompress
 
 __all__ = [
     "b9",
@@ -1057,76 +1058,3 @@ def xd(kkeys: KObj, kvalues: KObj, sorted: bool = False) -> KDict:
 
 def xt(kd: KDict, sorted: bool = False) -> KFlip:
     return KFlip(kd, sorted=sorted)
-
-
-def decompress(data: bytes) -> bytes:
-    # decompression based on c.java
-    # https://github.com/KxSystems/javakdb/blob/master/javakdb/src/main/java/com/kx/c.java#L667
-    # which in turns seems quite similar to LZRW1 http://www.ross.net/compression/lzrw1.html
-    # however with a much smaller window for the hash function (2 bytes) and only 256 slots
-
-    uncomp_sz = struct.unpack("I", data[0:4])[0] - 8
-    logger.debug(f"decompressing: {len(data)} compressed bytes to {uncomp_sz} bytes")
-
-    # compressed stream repeats: control byte (8 single-bit instructions), followed by 8-16 data bytes.
-    # Bits of the control byte are examined bit-by-bit from least significant:
-    #   control bit clear: copy one literal byte to output.
-    #   control bit set: read 2 bytes [index, sz]. Copy from hashed history table entry [index] for sz bytes.
-    # After each operation, update the hashpos table provided we have at least 2 bytes output, and using no more
-    # than two bytes from the history copy
-
-    dst = bytearray(uncomp_sz)
-    hashpos = [0] * 256
-    d = 4  # position index into compressed data[]
-    s = 0  # write position in dst[] (uncompressed output)
-    p = 0  # hash  position in dst[] for hashpos updates
-    f = 0  # current instruction byte, examined bit by bit
-    i = 0  # bit position within f as a 1-hot value, ie. 1,2,4,8,16,32,64,128
-
-    while s < uncomp_sz:
-        if i == 0:
-            # out of instruction bits! reload f, reset i, advance d
-            # print(f"loading next 8 instructions from d={d}")
-            f = data[d]
-            d += 1
-            i = 1
-
-        # check bit i of f
-        if f & i:  # bit set: copy history range
-            # {ptr}{sz} copy n bytes (sz+2) from uncompressed history pointer r (ptr)
-            r = hashpos[data[d]]
-            n = data[d + 1]
-            # print(f"instr {i} hist d={d} slot {data[d]}, copy pos={r} len={2+n} to {s}")
-            # DO NOT USE SLICE ASSIGNMENT HERE, AS A HISTORY REFERENCE CAN COPY OWN OUTPUT
-            # ie. start 8 bytes back and copy 64 bytes, gives 8x repeating 8 bytes
-            for m in range(2 + n):
-                dst[s + m] = dst[r + m]
-            d += 2
-            s += 2
-
-        else:  # copy 1 byte from compressed stream to uncomp
-            # print(f"instr {i} literal d={d} value {data[d:d+1].hex()} to pos {s}")
-            dst[s] = data[d]
-            n = 0
-            d += 1
-            s += 1
-
-        while p < s - 1:
-            hashv = dst[p] ^ dst[p + 1]
-            # print(f" hash slot {hashv} set to p={p}")
-            hashpos[hashv] = p
-            p += 1
-
-        # only first two bytes of a copied range are used to update the hash
-        # jump s and p over the remaining copied range (n)
-        s += n
-        if f & i:
-            p = s
-
-        # next control bit
-        i = (i << 1) & 255
-
-    # Note that cpython is overly restrictive in the uuid.UUID(bytes=...) call and will not
-    # allow a bytearray, so now decompression is done convert it once to immutable bytes object.
-    #  https://github.com/python/cpython/blob/8edfa0b0b4ae4235bb3262d952c23e7581516d4f/Lib/uuid.py#L188
-    return bytes(dst)
