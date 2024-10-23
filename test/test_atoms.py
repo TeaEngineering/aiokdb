@@ -274,7 +274,7 @@ def test_table_checks() -> None:
     with pytest.raises(ValueError, match="must have >0 columns"):
         xt(xd(k, v))
 
-    # you can build these dictionaries, but not flip them
+    # you can build these dictionaries, but not flip them as not symbols
     k = ktn(TypeEnum.KH, sz=2)
     v = ktn(TypeEnum.KH, sz=2)
     d = xd(k, v)
@@ -286,6 +286,12 @@ def test_table_checks() -> None:
     d = xd(k, v)
     with pytest.raises(ValueError, match="dict key must be S vector of column names"):
         xt(d)
+
+    # dict has values with different lengths
+    k = ktn(TypeEnum.KS, sz=2)
+    v = kk(ktn(TypeEnum.KJ, sz=3), ktn(TypeEnum.KJ, sz=4))
+    with pytest.raises(ValueError, match="column length inconsistent"):
+        xt(xd(k, v))
 
     k = ktn(TypeEnum.KS, sz=2)
     v = kk(ktn(TypeEnum.KJ, sz=3), ktn(TypeEnum.KJ, sz=3))
@@ -318,6 +324,17 @@ def test_table_d9() -> None:
     assert t.kS() == ["a", "b"]
     assert t.kK()[0].kI() == array("l", [2])
     assert t["b"].kI() == array("l", [3])
+
+    # accessing rows as a slice gives a table
+
+    # accessing rows by int gives a dictionary
+    d = t[0]
+    assert d.t == TypeEnum.XD
+    assert d.kS() == ["a", "b"]  # keys same
+    d["a"].aI() == 2
+    d["b"].aI() == 3
+    with pytest.raises(IndexError):
+        t[1]
 
 
 def test_identity() -> None:

@@ -276,7 +276,7 @@ class KObj:
     def kvalue(self) -> "KObj":
         raise self._te()
 
-    def __getitem__(self, item: str) -> "KObj":
+    def __getitem__(self, item: Union[int, str]) -> "KObj":
         raise self._te()
 
     # TODO: clean this up by having kS() return a MutableSequence(str) that
@@ -348,6 +348,12 @@ class KObjAtom(KObj):
         if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
             raise ValueError(f"wrong type {self._tn()} for j()")
         self.data = struct.pack("q", j)
+        return self
+
+    def f(self, f: float) -> KObj:
+        if self.t not in [-TypeEnum.KF, -TypeEnum.KZ]:
+            raise ValueError(f"wrong type {self._tn()} for f()")
+        self.data = struct.pack("d", f)
         return self
 
     def uu(self, uu: uuid.UUID) -> KObj:
@@ -865,8 +871,16 @@ def ki(i: int) -> KObj:
     return KObjAtom(-TypeEnum.KI).i(i)
 
 
+def kf(f: float) -> KObj:
+    return KObjAtom(-TypeEnum.KF).f(f)
+
+
 def kj(i: int) -> KObj:
     return KObjAtom(-TypeEnum.KJ).j(i)
+
+
+def kp(i: int) -> KObj:
+    return KObjAtom(-TypeEnum.KP).j(i)
 
 
 def ks(s: str) -> KObj:
@@ -965,7 +979,9 @@ class KDict(KObj):
 
         raise KeyError(f"Keys as strings not possible on {self._kkey._tn()}")
 
-    def __getitem__(self, item: str) -> KObj:
+    def __getitem__(self, item: Union[int, str]) -> KObj:
+        if not isinstance(item, str):
+            raise ValueError("cannot index dict by int")
         if self._kkey.t == TypeEnum.KS:
             try:
                 idx = self.kkey().kS().index(item)
@@ -996,6 +1012,11 @@ class KFlip(KObj):
             raise ValueError("dict key must be S vector of column names")
         if len(kd.kvalue().kK()) == 0:
             raise ValueError("cannot have zero columns")
+        # check all columns have same length
+        c = len(kd.kvalue().kK()[0])
+        for col in kd.kvalue().kK():
+            if len(col) != c:
+                raise ValueError("column length inconsistent")
 
         attr = AttrEnum.NONE
         if sorted:
@@ -1023,12 +1044,49 @@ class KFlip(KObj):
         first_col = tdict_values.kK()[0]
         return len(first_col)
 
-    def __getitem__(self, item: str) -> KObj:
-        try:
-            idx = self.kS().index(item)
-            return self.kK()[idx]
-        except ValueError:
-            raise KeyError(f"Column not found {item}")
+    def __getitem__(self, item: Union[int, str]) -> KObj:
+        if isinstance(item, int):
+            if item >= len(self):
+                raise IndexError()
+            d = self.kvalue()
+            vals = []
+            for k in self.kS():
+                v = self[k]
+                # tricky: get index item from v
+                if v.t == TypeEnum.KJ:
+                    vals.append(kj(v.kJ()[item]))
+                elif v.t == TypeEnum.KI:
+                    vals.append(ki(v.kI()[item]))
+                elif v.t == TypeEnum.KH:
+                    vals.append(kh(v.kH()[item]))
+                elif v.t == TypeEnum.KB:
+                    vals.append(kb(v.kB()[item]))
+                elif v.t == TypeEnum.UU:
+                    vals.append(kuu(v.kU()[item]))
+                elif v.t == TypeEnum.KG:
+                    vals.append(kg(v.kG()[item]))
+                elif v.t == TypeEnum.KF:
+                    vals.append(kf(v.kF()[item]))
+                elif v.t == TypeEnum.KG:
+                    vals.append(kg(v.kG()[item]))
+                elif v.t == TypeEnum.KC:
+                    vals.append(kc(v.kC()[item]))
+                elif v.t == TypeEnum.KS:
+                    vals.append(ks(v.kS()[item]))
+                elif v.t == TypeEnum.KP:
+                    vals.append(kp(v.kJ()[item]))
+                elif v.t == TypeEnum.K:
+                    vals.append(v.kK()[item])
+                else:
+                    raise ValueError(f"no boxing defined for {v}")
+
+            return xd(d.kkey(), kk(*vals))
+        elif isinstance(item, str):
+            try:
+                idx = self.kS().index(item)
+                return self.kK()[idx]
+            except ValueError:
+                raise KeyError(f"Column not found {item}")
 
     def kS(self) -> "Sequence[str]":
         # column names
