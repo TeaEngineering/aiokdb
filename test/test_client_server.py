@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Optional
 
 import pytest
@@ -229,6 +230,41 @@ async def test_server_calls_client() -> None:
     assert (await tsc.stored_handle.sync_req(cv("dosums[]"))).aJ() == 42
 
     assert (await client_wr.sync_req(cv("checkafter[]"))).aJ() == 32
+
+    client_wr.close()
+    await client_wr.wait_closed()
+
+    server.close()
+    await server.wait_closed()
+
+
+@pytest.mark.asyncio
+async def test_client_speaks_first() -> None:
+    class BannerServerContext(MagicServerContext):
+        async def banner(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            return kj(32)
+
+    server = await start_qserver(6778, BannerServerContext())
+
+    fut = asyncio.get_running_loop().create_future()
+
+    class TestClientContext(MagicClientContext):
+        async def writer_available(self, dotzw: KdbWriter) -> None:
+            self.writer = dotzw
+            print("connected - sending subscribe")
+            try:
+                r = await dotzw.sync_req(cv("banner[]"))
+                print(f"recieved banner {r.aJ()}")
+                fut.set_result(r)
+            except Exception:
+                print("banner login rejected")
+
+    client_rd, client_wr = await open_qipc_connection(
+        port=6778, user="troy", password="tangoxray", context=TestClientContext()
+    )
+
+    r = await fut
+    assert r.aJ() == 32
 
     client_wr.close()
     await client_wr.wait_closed()
