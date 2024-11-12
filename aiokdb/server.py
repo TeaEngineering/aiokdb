@@ -132,7 +132,7 @@ class BaseContext:
     async def sync_response(self, cmd: KObj, dotzw: KdbWriter) -> None:
         pass
 
-    def writer_available(self, dotzw: KdbWriter) -> None:
+    async def writer_available(self, dotzw: KdbWriter) -> None:
         # .z.po
         pass
 
@@ -201,7 +201,7 @@ async def process_login(
 async def reader_to_context_task(
     q_writer: KdbWriter, q_reader: KdbReader, context: BaseContext
 ) -> None:
-    context.writer_available(q_writer)
+    await context.writer_available(q_writer)
     try:
         while not q_writer.writer.is_closing():
             mtype, cmd = await q_reader._read()

@@ -90,6 +90,23 @@ async def test_client_auth_defined_port() -> None:
 
 
 @pytest.mark.asyncio
+async def test_client_auth_uri() -> None:
+    context = ServerContext("tango")
+    server = await start_qserver(6779, context)
+
+    # can connect by url
+    client_rd, client_wr = await open_qipc_connection(
+        uri="kdb://qq:tango@localhost:6779"
+    )
+
+    client_wr.close()
+    await client_wr.wait_closed()
+
+    server.close()
+    await server.wait_closed()
+
+
+@pytest.mark.asyncio
 async def test_server_async() -> None:
     class AsyncServerContext(ServerContext):
         async def on_sync_request(self, cmd: KObj, dotzw: KdbWriter) -> KObj:
