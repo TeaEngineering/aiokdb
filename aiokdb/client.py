@@ -3,6 +3,7 @@ import asyncio
 import logging
 import struct
 from typing import Any, Optional, Tuple
+from urllib.parse import urlparse
 
 from aiokdb import cv, logger
 from aiokdb.server import (
@@ -24,9 +25,19 @@ async def open_qipc_connection(
     port: int = 8890,
     user: Optional[str] = None,
     password: Optional[str] = None,
+    uri: Optional[str] = None,
     context: Optional[ClientContext] = None,
     ver: int = 3,
 ) -> Tuple[KdbReader, KdbWriter]:
+    if uri:  #  uri takes precedence if provided
+        pr = urlparse(uri)
+        if pr.hostname:
+            host = pr.hostname
+        if pr.port:
+            port = pr.port
+        user = pr.username
+        password = pr.password
+
     reader, writer = await asyncio.open_connection(host, port)
 
     auth = ""
