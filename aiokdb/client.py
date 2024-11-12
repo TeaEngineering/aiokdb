@@ -19,6 +19,9 @@ class ClientContext(BaseContext):
     pass
 
 
+background_tasks = set()
+
+
 # KDB client code
 async def open_qipc_connection(
     host: str = "127.0.0.1",
@@ -61,7 +64,10 @@ async def open_qipc_connection(
     q_reader = KdbReader(reader)
     q_writer = KdbWriter(writer, q_reader, version=remote_ver, context=context)
     if context is not None:
-        asyncio.create_task(reader_to_context_task(q_writer, q_reader, context))
+        task = asyncio.create_task(reader_to_context_task(q_writer, q_reader, context))
+        background_tasks.add(task)
+        task.add_done_callback(background_tasks.discard)
+
     return q_reader, q_writer
 
 

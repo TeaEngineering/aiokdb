@@ -201,7 +201,9 @@ async def process_login(
 async def reader_to_context_task(
     q_writer: KdbWriter, q_reader: KdbReader, context: BaseContext
 ) -> None:
-    await context.writer_available(q_writer)
+    # use a new task for this notification as it might await the completion of
+    # a future that we later dispatch via. q_writer.on_response(...)
+    task = asyncio.create_task(context.writer_available(q_writer))
     try:
         while not q_writer.writer.is_closing():
             mtype, cmd = await q_reader._read()
@@ -243,6 +245,9 @@ async def reader_to_context_task(
             else:
                 raise Exception(f"{q_writer.qid} Unexpected incoming message type")
     finally:
+        task.cancel()
+        await task
+
         context.writer_closing(q_writer)
 
 
