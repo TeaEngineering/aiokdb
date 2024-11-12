@@ -244,6 +244,11 @@ async def reader_to_context_task(
                     )
             else:
                 raise Exception(f"{q_writer.qid} Unexpected incoming message type")
+
+    except asyncio.exceptions.IncompleteReadError:
+        # reader is closed, we have nothing more to send
+        q_writer.close()
+
     finally:
         task.cancel()
         await task

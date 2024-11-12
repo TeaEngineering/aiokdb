@@ -71,6 +71,22 @@ async def open_qipc_connection(
     return q_reader, q_writer
 
 
+async def maintain_qipc_connection(uri: Optional[str], context: ClientContext) -> None:
+    while True:
+        try:
+            logging.info("attempting connection")
+            qr, qw = await open_qipc_connection(uri=uri, context=context)
+            await qw.writer.wait_closed()
+            logging.info("connection closed")
+        except CredentialsException:
+            raise
+        except Exception:
+            logging.exception("caught exception")
+            await asyncio.sleep(10)
+
+    logging.info("retry loop exited?")
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
