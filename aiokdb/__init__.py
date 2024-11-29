@@ -1000,6 +1000,36 @@ class KDict(KObj):
         raise KeyError(f"Key lookup not possible on {self._kkey._tn()}")
 
 
+def atomic_from_vect_index(v: KObj, index: int) -> KObj:
+    # tricky: get index item from v
+    if v.t == TypeEnum.KJ:
+        return kj(v.kJ()[index])
+    elif v.t == TypeEnum.KI:
+        return ki(v.kI()[index])
+    elif v.t == TypeEnum.KH:
+        return kh(v.kH()[index])
+    elif v.t == TypeEnum.KB:
+        return kb(v.kB()[index])
+    elif v.t == TypeEnum.UU:
+        return kuu(v.kU()[index])
+    elif v.t == TypeEnum.KG:
+        return kg(v.kG()[index])
+    elif v.t == TypeEnum.KF:
+        return kf(v.kF()[index])
+    elif v.t == TypeEnum.KG:
+        return kg(v.kG()[index])
+    elif v.t == TypeEnum.KC:
+        return kc(v.kC()[index])
+    elif v.t == TypeEnum.KS:
+        return ks(v.kS()[index])
+    elif v.t == TypeEnum.KP:
+        return kp(v.kJ()[index])
+    elif v.t == TypeEnum.K:
+        return v.kK()[index]
+    else:
+        raise ValueError(f"no box/unbox defined for {v}")
+
+
 class KFlip(KObj):
     def __init__(self, kd: KObj, sorted: bool = False):
         if kd.t != TypeEnum.XD:
@@ -1052,33 +1082,9 @@ class KFlip(KObj):
             vals = []
             for k in self.kS():
                 v = self[k]
-                # tricky: get index item from v
-                if v.t == TypeEnum.KJ:
-                    vals.append(kj(v.kJ()[item]))
-                elif v.t == TypeEnum.KI:
-                    vals.append(ki(v.kI()[item]))
-                elif v.t == TypeEnum.KH:
-                    vals.append(kh(v.kH()[item]))
-                elif v.t == TypeEnum.KB:
-                    vals.append(kb(v.kB()[item]))
-                elif v.t == TypeEnum.UU:
-                    vals.append(kuu(v.kU()[item]))
-                elif v.t == TypeEnum.KG:
-                    vals.append(kg(v.kG()[item]))
-                elif v.t == TypeEnum.KF:
-                    vals.append(kf(v.kF()[item]))
-                elif v.t == TypeEnum.KG:
-                    vals.append(kg(v.kG()[item]))
-                elif v.t == TypeEnum.KC:
-                    vals.append(kc(v.kC()[item]))
-                elif v.t == TypeEnum.KS:
-                    vals.append(ks(v.kS()[item]))
-                elif v.t == TypeEnum.KP:
-                    vals.append(kp(v.kJ()[item]))
-                elif v.t == TypeEnum.K:
-                    vals.append(v.kK()[item])
-                else:
-                    raise ValueError(f"no boxing defined for {v}")
+                a = atomic_from_vect_index(v, item)
+                assert -a.t == v.t
+                vals.append(a)
 
             return xd(d.kkey(), kk(*vals))
         elif isinstance(item, str):
