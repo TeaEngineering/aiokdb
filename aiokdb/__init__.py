@@ -494,6 +494,43 @@ class KErrAtom(KObj):
         return self, offset + bs
 
 
+class KFnAtom(KObj):
+    def __init__(
+        self,
+        context: KContext = DEFAULT_CONTEXT,
+    ) -> None:
+        super().__init__(TypeEnum.FN, context)
+        self.data: bytes = b""
+
+    def aS(self) -> str:
+        return self.data[:-1].decode("ascii")
+
+    def ss(self, s: str) -> KObj:
+        self.data = bytes(s, "ascii")
+        return self
+
+    # serialisation
+    def _databytes(self) -> bytes:
+        return (
+            super()._databytes()
+            + b"\x00\n\x00"
+            + struct.pack("i", len(self.data))
+            + self.data
+        )
+
+    def _paysz(self) -> int:
+        return super()._paysz() + len(self.data) + 7
+
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
+        # flags always 00 10 00 ?
+        assert data[offset + 0] == 0
+        assert data[offset + 1] == 10
+        assert data[offset + 2] == 0
+        sz = struct.unpack("i", data[offset + 3 : offset + 7])[0]
+        self.data = data[offset + 7 : offset + 7 + sz]
+        return self, offset + 7 + sz
+
+
 class KRangedType(KObj):
     def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         attrib, sz = struct.unpack_from("<BI", data, offset=offset)
@@ -809,10 +846,12 @@ def d9(data: bytes) -> KObj:
         raise ValueError(
             f"unknown payload flags={flags} - not yet implemented, please open an Issue"
         )
-
-    k, pos = _d9_unpackfrom(data, offset=offset)
-    if pos != msglen:
-        raise Exception(f"Final position at {pos} expected {msglen}")
+    try:
+        k, pos = _d9_unpackfrom(data, offset=offset)
+        if pos != msglen:
+            raise Exception(f"Final position at {pos} expected {msglen}")
+    except ValueError as ve:
+        raise Exception(f"While unpacking buffer {data!r}") from ve
     return k
 
 
@@ -841,6 +880,8 @@ def _d9_unpackfrom(data: bytes, offset: int) -> Tuple[KObj, int]:
         kkeys, offset = _d9_unpackfrom(data, offset)
         kvalues, offset = _d9_unpackfrom(data, offset)
         return KDict(kkeys, kvalues, t), offset
+    elif t == TypeEnum.FN:
+        return KFnAtom().frombytes(data, offset)
     elif t >= 20 and t < 30:
         return VECTOR_CONSTUCTORS[TypeEnum.KJ](t).frombytes(data, offset)
     raise ValueError(f"Unable to d9 unpack t={t}")
