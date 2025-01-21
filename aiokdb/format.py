@@ -324,5 +324,7 @@ class AsciiFormatter:
             return "KTable"
         elif obj.t == TypeEnum.NIL:
             return "::"
+        elif obj.t == TypeEnum.FN:
+            return obj.aS()
 
         raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")
