@@ -195,7 +195,7 @@ class AsciiFormatter:
     def _fmt_atom_m(self, m: int) -> str:
         if m == Nulls.i:
             return "0Nm"
-        return f"{m/12:04}.{m%12:02}m"
+        return f"{m / 12:04}.{m % 12:02}m"
 
     def _fmt_atom_d(self, d: int) -> str:
         if d == Nulls.i:
@@ -215,7 +215,7 @@ class AsciiFormatter:
         if u == Nulls.i:
             return "0Nu"
         # TODO: formatting >1h etc
-        return f"{u/60:02}:{u%60:02}"
+        return f"{u / 60:02}:{u % 60:02}"
 
     def _fmt_atom_v(self, v: int) -> str:
         if v == Nulls.i:
