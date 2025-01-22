@@ -363,7 +363,7 @@ def test_mixed() -> None:
 def test_mixed_flip_indexing_types() -> None:
     # table has one column "blah" with non-uniform types
     k2 = kk(ks("function"), kj(17), ks("XBT"), kb(False))
-    t = xt(xd(ktns(TypeEnum.KS, "blah"), kk(k2)))
+    t = xt(xd(ktns("blah"), kk(k2)))
 
     # dictionaries from different rows of table have value type from the nested type
     assert t[0].t == TypeEnum.XD
@@ -390,10 +390,10 @@ def test_table_uuid_str_column() -> None:
 
     # keyed table
     # dictionary with tables for keys and values
-    key_hdr = ktns(TypeEnum.KS, "envelope_id")
+    key_hdr = ktns("envelope_id")
     key_val = kk(ktn(TypeEnum.UU))
 
-    val_hdr = ktns(TypeEnum.KS, "payload", "time")
+    val_hdr = ktns("payload", "time")
     val_val = kk(ktn(TypeEnum.K), ktn(TypeEnum.KP))
     kt = xd(xt(xd(key_hdr, key_val)), xt(xd(val_hdr, val_val)))
 
