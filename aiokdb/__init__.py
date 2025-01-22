@@ -1124,7 +1124,6 @@ class KFlip(KObj):
             for k in self.kS():
                 v = self[k]
                 a = atomic_from_vect_index(v, item)
-                assert -a.t == v.t
                 vals.append(a)
 
             return xd(d.kkey(), kk(*vals))
