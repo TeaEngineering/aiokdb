@@ -25,13 +25,10 @@ def ktni(t: TypeEnum, *ints: int) -> KObj:
     return v
 
 
-def ktns(t: TypeEnum, *ss: str) -> KObj:
-    v = ktn(t)
-    if t == TypeEnum.KS:
-        for s in ss:
-            v.appendS(s)
-    else:
-        raise ValueError(f"No str array initialiser for {tn(t)}")
+def ktns(*ss: str) -> KObj:
+    v = ktn(TypeEnum.KS)
+    for s in ss:
+        v.appendS(s)
     return v
 
 

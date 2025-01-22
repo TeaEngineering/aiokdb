@@ -56,10 +56,10 @@ def test_format_keyed_table_nested_str() -> None:
     expected = "envelope_id                         | payload time                         \n------------------------------------|--------------------------------------\n2d948578-e9d6-79a2-8207-9df7a71f0b3b| abc     2024.05.14D23:13:19:044908000\n409031f3-b19c-6770-ee84-6e9369c98697| xy      2024.05.14D23:13:19:044908000"
     # keyed table
     # dictionary with tables for keys and values
-    key_hdr = ktns(TypeEnum.KS, "envelope_id")
+    key_hdr = ktns("envelope_id")
     key_val = kk(ktn(TypeEnum.UU))
 
-    val_hdr = ktns(TypeEnum.KS, "payload", "time")
+    val_hdr = ktns("payload", "time")
     val_val = kk(ktn(TypeEnum.K), ktn(TypeEnum.KP))
     kt = xd(xt(xd(key_hdr, key_val)), xt(xd(val_hdr, val_val)))
 
@@ -76,7 +76,7 @@ def test_format_keyed_table_nested_str() -> None:
 
 
 def test_format_dict() -> None:
-    d = xd(ktni(TypeEnum.KJ, 3, 612, 6), ktns(TypeEnum.KS, "hi", "p", "dog"))
+    d = xd(ktni(TypeEnum.KJ, 3, 612, 6), ktns("hi", "p", "dog"))
     fmt = AsciiFormatter()
     assert fmt.format(d) == "3  | hi\n612| p\n6  | dog"
 
