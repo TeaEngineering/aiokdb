@@ -360,6 +360,18 @@ def test_mixed() -> None:
     assert b9(k) == b9(k2)
 
 
+def test_mixed_flip_indexing_types() -> None:
+    # table has one column "blah" with non-uniform types
+    k2 = kk(ks("function"), kj(17), ks("XBT"), kb(False))
+    t = xt(xd(ktns(TypeEnum.KS, "blah"), kk(k2)))
+
+    # dictionaries from different rows of table have value type from the nested type
+    assert t[0].t == TypeEnum.XD
+    assert t[0]["blah"].t == -TypeEnum.KS
+    assert t[1].t == TypeEnum.XD
+    assert t[1]["blah"].t == -TypeEnum.KJ
+
+
 def test_equals() -> None:
     assert kj(34) == kj(34)
     assert kj(34) != kj(35)
