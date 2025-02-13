@@ -6,6 +6,7 @@ import pytest
 
 from aiokdb import (
     AttrEnum,
+    MessageType,
     TypeEnum,
     b9,
     cv,
@@ -425,3 +426,20 @@ def test_vector_extras() -> None:
 def test_kk() -> None:
     with pytest.raises(ValueError, match="not KObj: None"):
         kk(kj(4), None)  # type: ignore
+
+
+def test_fn100() -> None:
+    def chk(b1: bytes) -> None:
+        d9(b1)
+        assert b9(d9(b1), msgtype=MessageType.RESPONSE) == b1
+
+    # q) square:{x*x};square
+    chk(b"\x01\x02\x00\x00\x15\x00\x00\x00d\x00\n\x00\x05\x00\x00\x00{x*x}")
+    # k lambda, result from q) mod
+    chk(b"\x01\x02\x00\x00 \x00\x00\x00dq\x00\n\x00\x0f\x00\x00\x00k){x-y*x div y}")
+    # q) til
+    chk(
+        b"\x01\x02\x00\x00&\x00\x00\x00dq\x00\n\x00\x15\x00\x00\x00k){$[0>@x;!x;'`type]}"
+    )
+    # operator, result from q) like
+    chk(b"\x01\x02\x00\x00\n\x00\x00\x00f\x19")

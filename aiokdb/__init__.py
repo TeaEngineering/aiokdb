@@ -98,6 +98,7 @@ class TypeEnum(enum.IntEnum):
     XD = 99  # dict
     FN = 100  # function
     NIL = 101  # nil item
+    OP = 102  # builtin operator
     SD = 127  # sorted dict
     KRR = -128  # error
 
@@ -500,10 +501,11 @@ class KFnAtom(KObj):
         context: KContext = DEFAULT_CONTEXT,
     ) -> None:
         super().__init__(TypeEnum.FN, context)
+        self.prelude: bytes = b""
         self.data: bytes = b""
 
     def aS(self) -> str:
-        return self.data[:-1].decode("ascii")
+        return self.data.decode("ascii")
 
     def ss(self, s: str) -> KObj:
         self.data = bytes(s, "ascii")
@@ -513,22 +515,47 @@ class KFnAtom(KObj):
     def _databytes(self) -> bytes:
         return (
             super()._databytes()
-            + b"\x00\n\x00"
+            + self.prelude
             + struct.pack("i", len(self.data))
             + self.data
         )
 
     def _paysz(self) -> int:
-        return super()._paysz() + len(self.data) + 7
+        return super()._paysz() + len(self.data) + 4 + len(self.prelude)
 
     def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
-        # flags always 00 10 00 ?
-        assert data[offset + 0] == 0
-        assert data[offset + 1] == 10
-        assert data[offset + 2] == 0
-        sz = struct.unpack("i", data[offset + 3 : offset + 7])[0]
-        self.data = data[offset + 7 : offset + 7 + sz]
-        return self, offset + 7 + sz
+        # guesswork: k lambdas use a 4 byte prelude, q 3 bytes
+        prelude_len = {0: 3, 104: 4, 113: 4}[data[offset]]
+
+        sz = struct.unpack("i", data[offset + prelude_len : offset + prelude_len + 4])[
+            0
+        ]
+        self.prelude = data[offset : offset + prelude_len]
+        self.data = data[offset + prelude_len + 4 : offset + prelude_len + 4 + sz]
+        return self, offset + len(self.prelude) + 4 + len(self.data)
+
+
+class KOpAtom(KObj):
+    def __init__(
+        self,
+        context: KContext = DEFAULT_CONTEXT,
+    ) -> None:
+        super().__init__(TypeEnum.OP, context)
+        self.op: int = 0
+
+    def aJ(self) -> int:
+        return self.op
+
+    # serialisation
+    def _databytes(self) -> bytes:
+        return super()._databytes() + struct.pack("<b", self.op)
+
+    def _paysz(self) -> int:
+        return super()._paysz() + 1
+
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
+        self.op = data[offset]
+        return self, offset + 1
 
 
 class KRangedType(KObj):
@@ -882,6 +909,8 @@ def _d9_unpackfrom(data: bytes, offset: int) -> Tuple[KObj, int]:
         return KDict(kkeys, kvalues, t), offset
     elif t == TypeEnum.FN:
         return KFnAtom().frombytes(data, offset)
+    elif t == TypeEnum.OP:
+        return KOpAtom().frombytes(data, offset)
     elif t >= 20 and t < 30:
         return VECTOR_CONSTUCTORS[TypeEnum.KJ](t).frombytes(data, offset)
     raise ValueError(f"Unable to d9 unpack t={t}")
