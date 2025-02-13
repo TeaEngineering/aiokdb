@@ -885,7 +885,9 @@ def d9(data: bytes) -> KObj:
 def _d9_unpackfrom(data: bytes, offset: int) -> Tuple[KObj, int]:
     (t,) = struct.unpack_from("<b", data, offset=offset)
     offset += 1
-    logger.debug(f" at offset {offset}/{len(data)} unpacking type {tn(t)}")
+    logger.debug(
+        f" at offset {offset}/{len(data)} unpacking type {tn(t)} peek {data[offset : offset + 100]!r}"
+    )
     if t == -TypeEnum.KS or t == TypeEnum.KRR:
         return KSymAtom(t).frombytes(data, offset)
     elif t < 0:

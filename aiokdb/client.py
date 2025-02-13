@@ -41,6 +41,7 @@ async def open_qipc_connection(
         user = pr.username
         password = pr.password
 
+    logger.debug(f"Connecting to {host}:{port}")
     reader, writer = await asyncio.open_connection(host, port)
 
     auth = ""
@@ -49,6 +50,7 @@ async def open_qipc_connection(
     if password:
         auth = auth + ":" + password
 
+    logger.debug("Connected, sending auth")
     writer.write(auth.encode() + struct.pack("<B", ver) + b"\000")
     await writer.drain()
 

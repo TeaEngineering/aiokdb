@@ -30,6 +30,8 @@ class KdbReader:
             f"> recv ver={ver} msgtype={msgtype} flags={flags} msglen={msglen}"
         )
         payload = await self.reader.readexactly(msglen - 8)
+        if len(payload) < 1000 and logging.getLogger().isEnabledFor(logging.DEBUG):
+            logger.debug(f"> recv buffer={msgh + payload!r}")
         k = d9(msgh + payload)
         return msgtype, k
 
