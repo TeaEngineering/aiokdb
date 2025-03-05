@@ -287,14 +287,11 @@ async def handle_connection(
             pass
 
 
-async def start_qserver(
-    port: int, context: ServerContext, periodic: bool = False
-) -> Any:
+async def start_qserver(port: int, context: ServerContext) -> Any:
     logging.info(f"opening KDB-q IPC server on port {port}")
-    if periodic:
-        await context.start_tasks()
-
-    return await asyncio.start_server(partial(handle_connection, context), "", port)
+    server = await asyncio.start_server(partial(handle_connection, context), "", port)
+    await context.start_tasks()
+    return server
 
 
 async def main(qpassword: str, qport: int) -> None:
