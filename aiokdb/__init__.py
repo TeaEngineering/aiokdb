@@ -687,11 +687,11 @@ class KIntSymArray(KIntArray):
     def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
         self._i = array.array("l", [0] * sz)
         for i in range(sz):
-            bs = data[offset:].index(b"\x00") + 1
-            s = data[offset : offset + bs - 1].decode("ascii")
+            bs = data.index(b"\x00", offset) - offset
+            s = data[offset : offset + bs].decode("ascii")
             d = self.context.ss(s)
             self._i[i] = d
-            offset += bs
+            offset += bs + 1
         return self, offset
 
 
