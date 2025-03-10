@@ -140,6 +140,12 @@ class KContext:
         self.symbols_enc[idx] = (s, bs)
         return idx
 
+    def lookup_str(self, idx: int) -> str:
+        return self.symbols_enc[idx][0]
+
+    def lookup_bytes(self, idx: int) -> bytes:
+        return self.symbols_enc[idx][1]
+
 
 DEFAULT_CONTEXT = KContext()
 
@@ -446,7 +452,7 @@ class KSymAtom(KObj):
         return cast(int, struct.unpack("i", self.data)[0])
 
     def aS(self) -> str:
-        return self.context.symbols_enc[self.aI()][0]
+        return self.context.lookup_str(self.aI())
 
     def ss(self, s: str) -> KObj:
         if self.t not in [-TypeEnum.KS, TypeEnum.KRR]:
@@ -456,10 +462,10 @@ class KSymAtom(KObj):
 
     # serialisation
     def _databytes(self) -> bytes:
-        return super()._databytes() + self.context.symbols_enc[self.aI()][1]
+        return super()._databytes() + self.context.lookup_bytes(self.aI())
 
     def _paysz(self) -> int:
-        return super()._paysz() + len(self.context.symbols_enc[self.aI()][1])
+        return super()._paysz() + len(self.context.lookup_bytes(self.aI()))
 
     def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         bs = data[offset:].index(b"\x00") + 1
@@ -660,19 +666,19 @@ class KIntSymArray(KIntArray):
     # store symbol indexes in KIntArray
     # hook serialise to use null byte terminated representation
     def _paysz(self) -> int:
-        return 2 + 4 + sum([len(self.context.symbols_enc[j][1]) for j in self._i])
+        return 2 + 4 + sum([len(self.context.lookup_bytes(j)) for j in self._i])
 
     def _databytes(self) -> bytes:
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self._i))]
         for j in self._i:
-            parts.append(self.context.symbols_enc[j][1])
+            parts.append(self.context.lookup_bytes(j))
         return b"".join(parts)
 
     def kS(self) -> "Sequence[str]":
         # Warning: accessor read-only
         s = []
         for j in self._i:
-            s.append(self.context.symbols_enc[j][0])
+            s.append(self.context.lookup_str(j))
         return s
 
     def appendS(self, *ss: str) -> KObj:
@@ -1093,7 +1099,10 @@ def atomic_from_vect_index(v: KObj, index: int) -> KObj:
     elif v.t == TypeEnum.KC:
         return kc(v.kC()[index])
     elif v.t == TypeEnum.KS:
-        return ks(v.kS()[index])
+        # symbol index
+        si = v.kI()[index]
+        # TODO: could improve this further since ks repeats lookup
+        return ks(v.context.lookup_str(si))
     elif v.t == TypeEnum.KP:
         return kp(v.kJ()[index])
     elif v.t == TypeEnum.K:

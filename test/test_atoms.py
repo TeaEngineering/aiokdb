@@ -443,3 +443,13 @@ def test_fn100() -> None:
     )
     # operator, result from q) like
     chk(b"\x01\x02\x00\x00\n\x00\x00\x00f\x19")
+
+
+def test_table_index_dict_on_syms() -> None:
+    t = xt(
+        xd(ktns("x", "y"), kk(ktns("c", "d", "e", "f"), ktni(TypeEnum.KJ, 1, 2, 3, 4)))
+    )
+    d = t[1]
+    d.t == TypeEnum.XD
+    d["x"].aS() == "d"
+    d["y"].aJ() == 2
