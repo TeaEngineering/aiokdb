@@ -125,12 +125,7 @@ class AsciiFormatter:
                 return ""
             return str(i)
         elif obj.t == TypeEnum.KJ:
-            j = obj.kJ()[index]
-            if j == Nulls.j:
-                return ""
-            if j == 9223372036854775807:
-                return "0W"
-            return str(j)
+            return self._fmt_atom_j(obj.kJ()[index])
         elif obj.t == TypeEnum.KM:
             return self._fmt_atom_m(obj.kI()[index])
         elif obj.t == TypeEnum.KD:
@@ -165,6 +160,15 @@ class AsciiFormatter:
         elif obj.t == TypeEnum.KC:
             return obj.aS()[index]
         raise ValueError(f"No cell formatter for {obj} with type {obj._tn()}")
+
+    def _fmt_atom_j(self, j: int) -> str:
+        if j == Nulls.j:
+            return ""
+        elif j == 9223372036854775807:
+            return "0W"
+        elif j == -9223372036854775807:
+            return "-0W"
+        return str(j)
 
     def _fmt_atom_p(self, j: int) -> str:
         if j == Nulls.j:
@@ -259,11 +263,7 @@ class AsciiFormatter:
         # of inline_chars
         if obj.t == -TypeEnum.KJ:
             j = obj.aJ()
-            if j == Nulls.j:
-                return ""
-            if j == 9223372036854775807:
-                return "0W"
-            return str(j)
+            return self._fmt_atom_j(j)
         elif obj.t == -TypeEnum.KI:
             i = obj.aI()
             if i == Nulls.i:
