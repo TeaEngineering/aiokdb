@@ -196,6 +196,9 @@ class KObj:
     def c(self, c: str) -> "KObj":
         raise self._te()
 
+    def f(self, f: float) -> "KObj":
+        raise self._te()
+
     def g(self, g: int) -> "KObj":
         raise self._te()
 
@@ -333,6 +336,15 @@ class KObjAtom(KObj):
         self.data = bs
         return self
 
+    def f(self, f: float) -> KObj:
+        if self.t == -TypeEnum.KE:
+            self.data = struct.pack("<f", f)
+        elif self.t in [-TypeEnum.KF, -TypeEnum.KZ]:
+            self.data = struct.pack("<d", f)
+        else:
+            raise ValueError(f"wrong type {self._tn()} for f()")
+        return self
+
     def g(self, g: int) -> KObj:
         if self.t not in [-TypeEnum.KG]:
             raise ValueError(f"wrong type {self._tn()} for g()")
@@ -355,12 +367,6 @@ class KObjAtom(KObj):
         if self.t not in [-TypeEnum.KJ, -TypeEnum.KP]:
             raise ValueError(f"wrong type {self._tn()} for j()")
         self.data = struct.pack("q", j)
-        return self
-
-    def f(self, f: float) -> KObj:
-        if self.t not in [-TypeEnum.KF, -TypeEnum.KZ]:
-            raise ValueError(f"wrong type {self._tn()} for f()")
-        self.data = struct.pack("d", f)
         return self
 
     def uu(self, uu: uuid.UUID) -> KObj:
