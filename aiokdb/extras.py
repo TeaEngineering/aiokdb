@@ -44,6 +44,12 @@ def ktnb(*bools: bool) -> KObj:
     return v
 
 
+def ktnf(*floats: float) -> KObj:
+    v = ktn(TypeEnum.KF)
+    v.kF().extend(floats)
+    return v
+
+
 # We assume commands of this pattern "func[arg1;arg2;argN]"
 # which we convert to a k-array with symbol as the first argument, and remaining
 # arguments (badly) converted to k-atoms. KDBs parser is a work of art, and this is
