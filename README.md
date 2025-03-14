@@ -45,8 +45,8 @@ Arrays are implemented with subtypes that use [Python's native arrays module](ht
  -12  p    timestamp  -KP       -         -            -      -                           KObjAtom
  -11  s    symbol     -KS       .aS()     .ss("sym")   ks()   str                         KSymAtom
  -10  c    char       -KC       .aC()     .c("c")      kc()   str (len 1)                 KObjAtom
-  -9  f    float      -KF       .aF()     .f(6.1)      ke()   float                       KObjAtom
-  -8  e    real       -KE       .aE()     .f(6.2)      kf()   float                       KObjAtom
+  -9  f    float      -KF       .aF()     .f(6.1)      kf()   float                       KObjAtom
+  -8  e    real       -KE       .aE()     .f(6.2)      ke()   float                       KObjAtom
   -7  j    long       -KJ       .aJ()     .j(7)        kj()   int                         KObjAtom
   -6  i    int        -KI       .aI()     .i(6)        ki()   int                         KObjAtom
   -5  h    short      -KH       .aH()     .h(5)        kh()   int                         KObjAtom
@@ -54,15 +54,15 @@ Arrays are implemented with subtypes that use [Python's native arrays module](ht
   -2  g    guid       -UU       .aU()     .uu(UUID())  kuu()  uuid.UUID                   KObjAtom
   -1  b    boolean    -KB       .aB()     .b(True)     kb()   bool                        KObjAtom
    0  *    list        K        .kK()     -            kk()   MutableSequence[KObj]       KObjArray
-   1  b    boolean     KB       .kB()     -            -      MutableSequence[bool]       KByteArray
-   2  g    guid        UU       .kU()     -            -      MutableSequence[uuid.UUID]  KUUIDArray
-   4  x    byte        KG       .kG()     -            -      MutableSequence[int]        KByteArray
-   5  h    short       KH       .kH()     -            -      MutableSequence[int]        KShortArray
-   6  i    int         KI       .kI()     -            -      MutableSequence[int]        KIntArray
-   7  j    long        KJ       .kJ()     -            -      MutableSequence[int]        KLongArray
+   1  b    boolean     KB       .kB()     -            ktnb() MutableSequence[bool]       KByteArray
+   2  g    guid        UU       .kU()     -            ktnu() MutableSequence[uuid.UUID]  KUUIDArray
+   4  x    byte        KG       .kG()     -            ktni() MutableSequence[int]        KByteArray
+   5  h    short       KH       .kH()     -            ktni() MutableSequence[int]        KShortArray
+   6  i    int         KI       .kI()     -            ktni() MutableSequence[int]        KIntArray
+   7  j    long        KJ       .kJ()     -            ktni() MutableSequence[int]        KLongArray
    8  e    real        KE       .kE()     -            -      MutableSequence[float]      KFloatArray
-   9  f    float       KF       .kF()     -            -      MutableSequence[float]      KDoubleArray
-  10  c    char        KC       .kC()     -            -      array.array                 KCharArray
+   9  f    float       KF       .kF()     -            ktnf() MutableSequence[float]      KDoubleArray
+  10  c    char        KC       .kC()     -            cv()   array.array                 KCharArray
   11  s    symbol      KS       .kS()     -            ktns() Sequence[str]               KIntSymArray
   12  p    timestamp   KP       -         -            -      -
   13  m    month       KM       -         -            -      -

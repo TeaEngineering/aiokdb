@@ -14,6 +14,7 @@ from aiokdb import (
     ka,
     kb,
     kc,
+    ke,
     kf,
     kg,
     kh,
@@ -66,6 +67,7 @@ def test_atoms_d9b9() -> None:
     assert d9(b9(kb(True))).aB() is True
     assert d9(b9(kb(False))).aB() is False
     assert d9(b9(kg(12))).aG() == 12
+    assert d9(b9(ke(3.4))).aE() == pytest.approx(3.4, 0.0001)
     assert d9(b9(kf(3.4))).aF() == 3.4
     assert d9(b9(kh(12))).aH() == 12
     assert d9(b9(ki(12))).aI() == 12

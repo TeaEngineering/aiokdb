@@ -955,6 +955,10 @@ def ki(i: int) -> KObj:
     return KObjAtom(-TypeEnum.KI).i(i)
 
 
+def ke(f: float) -> KObj:
+    return KObjAtom(-TypeEnum.KE).f(f)
+
+
 def kf(f: float) -> KObj:
     return KObjAtom(-TypeEnum.KF).f(f)
 
