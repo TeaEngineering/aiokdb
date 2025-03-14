@@ -85,6 +85,8 @@ def test_format_dict() -> None:
         fmt.format(d) == "3  | 56\n612| xray\n6  | 00000000-0000-0000-0000-000000000000"
     )
 
+    assert fmt.format(kj(-9223372036854775807)) == "-0W"
+
 
 def test_format_atoms() -> None:
     fmt = AsciiFormatter(height=8)
