@@ -15,18 +15,22 @@ from aiokdb.format import AsciiFormatter
 
 
 async def main(args: Any) -> None:
-    r, w = await open_qipc_connection(
-        host=args.host, port=args.port, user=args.user, password=args.password
-    )
-
     history = FileHistory(os.path.expanduser("~/.aiokdb-cli-history"))
     session: Any = PromptSession("(eval) > ", history=history)
     fmt = AsciiFormatter(height=args.height)
 
+    password = args.password
+    if password is None:
+        password = await session.prompt_async("Password:", is_password=True)
+
+    r, w = await open_qipc_connection(
+        host=args.host, port=args.port, user=args.user, password=password
+    )
+
     # Run echo loop. Read text from stdin, and reply it back.
     while True:
         try:
-            inp = await session.prompt_async()
+            inp = await session.prompt_async("q)", is_password=False)
             if inp == "":
                 continue
             output = await w.sync_req(cv(inp))
