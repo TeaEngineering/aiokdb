@@ -1,6 +1,6 @@
 import itertools
 from datetime import datetime, timezone
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 from aiokdb import KObj, Nulls, TypeEnum
 
@@ -328,3 +328,103 @@ class AsciiFormatter:
             return obj.aS()
 
         raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")
+
+
+class HtmlFormatter(AsciiFormatter):
+    def __init__(
+        self,
+        table_class: Optional[str] = None,
+        indent: int = 2,
+        width: int = 200,
+        height: int = 10,
+    ):
+        super().__init__(width, height)
+        self.table_class = table_class
+        self.indent = indent
+
+    def format(self, obj: KObj) -> str:
+        if obj.t == TypeEnum.XT:
+            return self._fmt_unkeyed_table(obj)
+        elif obj.t == TypeEnum.XD and obj.kkey().t == TypeEnum.XT:
+            return self._fmt_keyed_table(obj)
+        elif obj.t == TypeEnum.XD:
+            return self._fmt_dict(obj)
+        return self._fmt_inline(obj)
+
+    def _fmt_unkeyed_table(self, obj: KObj) -> str:
+        rowcount = self._table_conforms(obj)
+        rows = self._select_rows(rowcount)
+
+        d1 = obj.kvalue()
+
+        colNames: Sequence[str] = d1.kkey().kS()
+        kv = d1.kvalue().kK()
+
+        # stringify all cells within our rowiter
+        rowSample: List[List[str]] = []
+        for r in rows:
+            cs = []
+            for c in range(len(colNames)):
+                s = self._str_cell(kv[c], c, r)
+                cs.append(s)
+            rowSample.append(cs)
+
+        rowHtml = [
+            f"""<table class="{self.table_class}">""",
+            """  <thead>""",
+            """    <tr>""",
+            *[f"""      <th>{r}</th>""" for r in colNames],
+            """    </tr>""",
+            """  </thead>""",
+            *[
+                "  <tr>\n"
+                + "\n".join([f"""    <td>{c}</td>""" for c in row])
+                + "\n  </tr>"
+                for row in rowSample
+            ],
+            """</table>""",
+        ]
+        return "\n".join(rowHtml)
+
+    def _fmt_keyed_table(self, obj: KObj) -> str:
+        ktk = obj.kkey()
+        ktv = obj.kvalue()
+
+        # check rows conform
+        keyrowcount = self._table_conforms(ktv)
+        valuerowcount = self._table_conforms(ktk)
+
+        assert keyrowcount == valuerowcount
+        rows = list(self._select_rows(keyrowcount))
+
+        colNames: List[Tuple[str, bool, KObj, int]] = [
+            (s, True, ktk, i) for i, s in enumerate(ktk.kS())
+        ] + [(s, False, ktv, i) for i, s in enumerate(ktv.kS())]
+
+        print(colNames)
+        rowSample: List[List[Tuple[str, bool]]] = []
+        for r in rows:
+            cs = []
+            for c, (s, iskey, kob, i) in enumerate(colNames):
+                st = self._str_cell(kob.kvalue().kvalue().kK()[i], c, r)
+                cs.append((st, iskey))
+            rowSample.append(cs)
+
+        w = {True: "th", False: "td"}
+
+        rowHtml = [
+            f"""<table class="{self.table_class}">""",
+            """  <thead>""",
+            """    <tr>""",
+            *[f"""      <th>{s}</th>""" for s, ik, kobj, i in colNames],
+            """    </tr>""",
+            """  </thead>""",
+            *[
+                "  <tr>\n"
+                + "\n".join([f"""    <{w[k]}>{c}</{w[k]}>""" for c, k in row])
+                + "\n  </tr>"
+                for row in rowSample
+            ],
+            """</table>""",
+        ]
+        return "\n".join(rowHtml)
