@@ -373,9 +373,10 @@ class HtmlFormatter(AsciiFormatter):
         rowSample: List[List[str]] = []
         for r in rows:
             cs = []
-            for c in range(len(colNames)):
-                s = self.escape(self._str_cell(kv[c], c, r))
-                cs.append(s)
+            for c, cn in enumerate(colNames):
+                fmt = self.get_table_cell_formatter_for(cn, False, obj, c)
+                st = fmt(kv[c], c, r)
+                cs.append(st)
             rowSample.append(cs)
 
         rowHtml = "\n".join(
@@ -399,6 +400,14 @@ class HtmlFormatter(AsciiFormatter):
         )
         return self.markup(rowHtml)
 
+    def _html_cell(self, obj: KObj, col: int, index: Optional[int]) -> str:
+        return self.escape(self._str_cell(obj, col, index))
+
+    def get_table_cell_formatter_for(
+        self, colName: str, isKey: bool, kob: KObj, i: int
+    ) -> Callable[[KObj, int, Optional[int]], str]:
+        return self._html_cell
+
     def _fmt_keyed_table(self, obj: KObj) -> str:
         ktk = obj.kkey()
         ktv = obj.kvalue()
@@ -410,16 +419,17 @@ class HtmlFormatter(AsciiFormatter):
         assert keyrowcount == valuerowcount
         rows = list(self._select_rows(keyrowcount))
 
-        colNames: List[Tuple[str, bool, KObj, int]] = [
+        # TODO: move get_table_cell_formatter_for lookup here
+        colMeta: List[Tuple[str, bool, KObj, int]] = [
             (s, True, ktk, i) for i, s in enumerate(ktk.kS())
         ] + [(s, False, ktv, i) for i, s in enumerate(ktv.kS())]
 
-        print(colNames)
         rowSample: List[List[Tuple[str, bool]]] = []
         for r in rows:
             cs = []
-            for c, (s, iskey, kob, i) in enumerate(colNames):
-                st = self.escape(self._str_cell(kob.kvalue().kvalue().kK()[i], c, r))
+            for c, (s, iskey, kob, i) in enumerate(colMeta):
+                fmt = self.get_table_cell_formatter_for(s, iskey, kob, i)
+                st = fmt(kob.kvalue().kvalue().kK()[i], c, r)
                 cs.append((st, iskey))
             rowSample.append(cs)
 
@@ -430,7 +440,7 @@ class HtmlFormatter(AsciiFormatter):
                 f"<table{self.tc}>",
                 "  <thead>",
                 "    <tr>",
-                "\n".join(f"      <th>{s}</th>" for s, ik, kobj, i in colNames),
+                "\n".join(f"      <th>{s}</th>" for s, ik, kobj, i in colMeta),
                 "    </tr>",
                 "  </thead>",
                 "\n".join(
