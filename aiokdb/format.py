@@ -1,6 +1,7 @@
 import itertools
 from datetime import datetime, timezone
-from typing import Iterable, List, Optional, Sequence, Tuple
+from html import escape
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 
 from aiokdb import KObj, Nulls, TypeEnum
 
@@ -330,6 +331,10 @@ class AsciiFormatter:
         raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")
 
 
+def identity(x: str) -> str:
+    return x
+
+
 class HtmlFormatter(AsciiFormatter):
     def __init__(
         self,
@@ -337,10 +342,14 @@ class HtmlFormatter(AsciiFormatter):
         indent: int = 2,
         width: int = 200,
         height: int = 10,
+        markup: Callable[[str], str] = identity,
+        escape: Callable[[str], str] = escape,
     ):
         super().__init__(width, height)
-        self.table_class = table_class
+        self.tc = f' class="{table_class}"' if table_class else ""
         self.indent = indent
+        self.markup = markup
+        self.escape = escape
 
     def format(self, obj: KObj) -> str:
         if obj.t == TypeEnum.XT:
@@ -349,7 +358,7 @@ class HtmlFormatter(AsciiFormatter):
             return self._fmt_keyed_table(obj)
         elif obj.t == TypeEnum.XD:
             return self._fmt_dict(obj)
-        return self._fmt_inline(obj)
+        return self.escape(self._fmt_inline(obj))
 
     def _fmt_unkeyed_table(self, obj: KObj) -> str:
         rowcount = self._table_conforms(obj)
@@ -365,12 +374,12 @@ class HtmlFormatter(AsciiFormatter):
         for r in rows:
             cs = []
             for c in range(len(colNames)):
-                s = self._str_cell(kv[c], c, r)
+                s = self.escape(self._str_cell(kv[c], c, r))
                 cs.append(s)
             rowSample.append(cs)
 
         rowHtml = [
-            f"""<table class="{self.table_class}">""",
+            f"""<table{self.tc}>""",
             """  <thead>""",
             """    <tr>""",
             *[f"""      <th>{r}</th>""" for r in colNames],
@@ -384,7 +393,7 @@ class HtmlFormatter(AsciiFormatter):
             ],
             """</table>""",
         ]
-        return "\n".join(rowHtml)
+        return self.markup("\n".join(rowHtml))
 
     def _fmt_keyed_table(self, obj: KObj) -> str:
         ktk = obj.kkey()
@@ -406,14 +415,14 @@ class HtmlFormatter(AsciiFormatter):
         for r in rows:
             cs = []
             for c, (s, iskey, kob, i) in enumerate(colNames):
-                st = self._str_cell(kob.kvalue().kvalue().kK()[i], c, r)
+                st = self.escape(self._str_cell(kob.kvalue().kvalue().kK()[i], c, r))
                 cs.append((st, iskey))
             rowSample.append(cs)
 
         w = {True: "th", False: "td"}
 
         rowHtml = [
-            f"""<table class="{self.table_class}">""",
+            f"""<table{self.tc}>""",
             """  <thead>""",
             """    <tr>""",
             *[f"""      <th>{s}</th>""" for s, ik, kobj, i in colNames],
@@ -427,4 +436,25 @@ class HtmlFormatter(AsciiFormatter):
             ],
             """</table>""",
         ]
-        return "\n".join(rowHtml)
+        return self.markup("\n".join(rowHtml))
+
+    def _fmt_dict(self, obj: KObj) -> str:
+        rows = list(self._select_rows(len(obj)))
+        ks, vs = [], []
+        for r in rows:
+            k = self.escape(self._str_cell(obj.kkey(), 0, r))
+            v = self.escape(self._str_cell(obj.kvalue(), 0, r))
+            ks.append(k)
+            vs.append(v)
+
+        return self.markup(
+            "".join(
+                [
+                    "<dl>\n",
+                    "\n".join(
+                        [f"  <dt>{k}</dt>\n  <dd>{v}</dd>" for k, v in zip(ks, vs)]
+                    ),
+                    "\n</dl>",
+                ]
+            )
+        )

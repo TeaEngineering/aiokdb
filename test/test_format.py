@@ -64,6 +64,34 @@ def test_format_unkeyed_html() -> None:
     )
 
 
+def test_format_unkeyed_escape() -> None:
+    fmt = HtmlFormatter(indent=2)
+    # q)-8!([]a:2 1i;b:3 4i)
+    ks = ktns("a", "b")
+    kv = kk(ktni(TypeEnum.KI, 2, 1), ktns("hi", "<script>alert(1)</script>"))
+    t = xt(xd(ks, kv))
+    assert (
+        fmt.format(t)
+        == """
+<table>
+  <thead>
+    <tr>
+      <th>a</th>
+      <th>b</th>
+    </tr>
+  </thead>
+  <tr>
+    <td>2</td>
+    <td>hi</td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>&lt;script&gt;alert(1)&lt;/script&gt;</td>
+  </tr>
+</table>""".strip()
+    )
+
+
 def test_format_keyed_table() -> None:
     expected = "a| b\n-|--\n2| 3"
 
@@ -135,6 +163,21 @@ def test_format_dict() -> None:
     )
 
     assert fmt.format(kj(-9223372036854775807)) == "-0W"
+
+    ht = HtmlFormatter()
+    assert (
+        ht.format(d)
+        == """
+<dl>
+  <dt>3</dt>
+  <dd>56</dd>
+  <dt>612</dt>
+  <dd>xray</dd>
+  <dt>6</dt>
+  <dd>00000000-0000-0000-0000-000000000000</dd>
+</dl>
+""".strip()
+    )
 
 
 def test_format_atoms() -> None:
