@@ -378,22 +378,26 @@ class HtmlFormatter(AsciiFormatter):
                 cs.append(s)
             rowSample.append(cs)
 
-        rowHtml = [
-            f"""<table{self.tc}>""",
-            """  <thead>""",
-            """    <tr>""",
-            *[f"""      <th>{r}</th>""" for r in colNames],
-            """    </tr>""",
-            """  </thead>""",
-            *[
-                "  <tr>\n"
-                + "\n".join([f"""    <td>{c}</td>""" for c in row])
-                + "\n  </tr>"
-                for row in rowSample
-            ],
-            """</table>""",
-        ]
-        return self.markup("\n".join(rowHtml))
+        rowHtml = "\n".join(
+            [
+                f"<table{self.tc}>",
+                "  <thead>",
+                "    <tr>",
+                "\n".join(f"      <th>{r}</th>" for r in colNames),
+                "    </tr>",
+                "  </thead>",
+                "\n".join(
+                    [
+                        "  <tr>\n"
+                        + "\n".join([f"    <td>{c}</td>" for c in row])
+                        + "\n  </tr>"
+                        for row in rowSample
+                    ]
+                ),
+                "</table>",
+            ]
+        )
+        return self.markup(rowHtml)
 
     def _fmt_keyed_table(self, obj: KObj) -> str:
         ktk = obj.kkey()
@@ -421,22 +425,26 @@ class HtmlFormatter(AsciiFormatter):
 
         w = {True: "th", False: "td"}
 
-        rowHtml = [
-            f"""<table{self.tc}>""",
-            """  <thead>""",
-            """    <tr>""",
-            *[f"""      <th>{s}</th>""" for s, ik, kobj, i in colNames],
-            """    </tr>""",
-            """  </thead>""",
-            *[
-                "  <tr>\n"
-                + "\n".join([f"""    <{w[k]}>{c}</{w[k]}>""" for c, k in row])
-                + "\n  </tr>"
-                for row in rowSample
-            ],
-            """</table>""",
-        ]
-        return self.markup("\n".join(rowHtml))
+        rowHtml = "\n".join(
+            [
+                f"<table{self.tc}>",
+                "  <thead>",
+                "    <tr>",
+                "\n".join(f"      <th>{s}</th>" for s, ik, kobj, i in colNames),
+                "    </tr>",
+                "  </thead>",
+                "\n".join(
+                    [
+                        "  <tr>\n"
+                        + "\n".join([f"    <{w[k]}>{c}</{w[k]}>" for c, k in row])
+                        + "\n  </tr>"
+                        for row in rowSample
+                    ]
+                ),
+                "</table>",
+            ]
+        )
+        return self.markup(rowHtml)
 
     def _fmt_dict(self, obj: KObj) -> str:
         rows = list(self._select_rows(len(obj)))
