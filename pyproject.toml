@@ -7,6 +7,11 @@ build-backend = "setuptools.build_meta"
 [tool.ruff.lint]
 extend-select = ["I"]
 
+[tool.pytest.ini_options]
+markers = [
+    "asyncio",
+]
+
 [project]
 name = "aiokdb"
 authors = [
@@ -29,3 +34,4 @@ dynamic = ["version"]
 [project.urls]
 Homepage = "https://github.com/TeaEngineering/aiokdb"
 Issues = "https://github.com/TeaEngineering/aiokdb/issues"
+
