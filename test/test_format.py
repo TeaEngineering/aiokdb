@@ -1,6 +1,7 @@
 import uuid
+from typing import Callable, Optional
 
-from aiokdb import TypeEnum, cv, d9, ka, kj, kk, ks, ktn, xd, xt
+from aiokdb import KObj, TypeEnum, cv, d9, ka, kj, kk, ks, ktn, xd, xt
 from aiokdb.extras import ktni, ktns
 from aiokdb.format import AsciiFormatter, HtmlFormatter
 
@@ -124,6 +125,38 @@ def test_format_keyed_table_html() -> None:
   <tr>
     <th>2</th>
     <td>3</td>
+  </tr>
+</table>""".strip()
+    )
+
+    ## certain named column in bold
+    class SillyHtmlFormatter(HtmlFormatter):
+        def get_table_cell_formatter_for(
+            self, colName: str, isKey: bool, kob: KObj, i: int
+        ) -> Callable[[KObj, int, Optional[int]], str]:
+            if colName == "b":
+                return self.bold_html_cell
+            return super().get_table_cell_formatter_for(colName, isKey, kob, i)
+
+        def bold_html_cell(self, obj: KObj, col: int, index: Optional[int]) -> str:
+            return self.markup(
+                "<b>" + self.escape(self._str_cell(obj, col, index)) + "</b>"
+            )
+
+    b = SillyHtmlFormatter()
+    assert (
+        b.format(t)
+        == """
+<table>
+  <thead>
+    <tr>
+      <th>a</th>
+      <th>b</th>
+    </tr>
+  </thead>
+  <tr>
+    <th>2</th>
+    <td><b>3</b></td>
   </tr>
 </table>""".strip()
     )
