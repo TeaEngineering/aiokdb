@@ -632,6 +632,10 @@ class KByteArray(KRangedType):
         if self.t == TypeEnum.KB:
             parts = ",".join(repr(r) for r in self.kB())
             return f"ktnb({parts})"
+        elif self.t == TypeEnum.KG:
+            parts = ",".join(repr(r) for r in self.kG())
+            return f"ktni(TypeEnum.KG, {parts})"
+
         else:
             return super().__repr__()
 
@@ -697,7 +701,7 @@ class KIntArray(KRangedType):
         return struct.pack("<bBI", self.t, self.attrib, len(self._i)) + pi
 
     def __repr__(self) -> str:
-        parts = ", ".join(repr(r) for r in self.kH())
+        parts = ", ".join(repr(r) for r in self.kI())
         return f"ktni(TypeEnum.KI, {parts})"
 
     def kI(self) -> "MutableSequence[int]":
