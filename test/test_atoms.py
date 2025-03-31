@@ -1,11 +1,12 @@
 import struct
-import uuid
 from array import array
+from uuid import UUID, uuid4
 
 import pytest
 
 from aiokdb import (
     AttrEnum,
+    KObj,
     MessageType,
     TypeEnum,
     b9,
@@ -39,9 +40,18 @@ def b2h(bs: bytes) -> str:
     return "0x" + bs.hex()
 
 
+def assert_er(obj: KObj) -> None:
+    print(repr(obj))
+    assert eval(repr(obj)) == obj
+
+
 def test_atoms_round_trip() -> None:
     assert ki(1).aI() == 1
+    assert_er(ki(1))
+
     assert kj(1).aJ() == 1
+    assert_er(kj(1))
+
     # mixing setters and getters of different widths is a bug
     with pytest.raises(ValueError, match=r".*wrong type KI \(-6\) for aJ"):
         ki(1).aJ()
@@ -50,6 +60,7 @@ def test_atoms_round_trip() -> None:
 
     # enumerates and stores the index, then reverses the lookup
     assert ks("hello").aS() == "hello"
+    assert_er(ks("hello"))
 
 
 def test_atoms_b9() -> None:
@@ -63,16 +74,21 @@ def test_atoms_b9() -> None:
     assert b9(kc(" ")) == h2b("0x010000000a000000f620")
 
 
+def d9b9(obj: KObj) -> KObj:
+    assert_er(obj)
+    return d9(b9(obj))
+
+
 def test_atoms_d9b9() -> None:
-    assert d9(b9(kb(True))).aB() is True
-    assert d9(b9(kb(False))).aB() is False
-    assert d9(b9(kg(12))).aG() == 12
-    assert d9(b9(ke(3.4))).aE() == pytest.approx(3.4, 0.0001)
-    assert d9(b9(kf(3.4))).aF() == 3.4
-    assert d9(b9(kh(12))).aH() == 12
-    assert d9(b9(ki(12))).aI() == 12
-    assert d9(b9(kj(12))).aJ() == 12
-    assert d9(b9(kc(" "))).aC() == " "
+    assert d9b9(kb(True)).aB() is True
+    assert d9b9(kb(False)).aB() is False
+    assert d9b9(kg(12)).aG() == 12
+    assert d9b9(ke(3.4)).aE() == pytest.approx(3.4, 0.0001)
+    assert d9b9(kf(3.4)).aF() == 3.4
+    assert d9b9(kh(12)).aH() == 12
+    assert d9b9(ki(12)).aI() == 12
+    assert d9b9(kj(12)).aJ() == 12
+    assert d9b9(kc(" ")).aC() == " "
 
 
 def test_atoms_d9() -> None:
@@ -92,9 +108,9 @@ def test_atoms_d9() -> None:
     assert d9(h2b("0x0100000011000000f90200000000000000")).aJ() == 2
     assert d9(h2b("0x0100000011000000f9ffffffffffffffff")).aJ() == -1
     # -8!"G"$"97ebf398-b01a-0870-b5b7-8fc9e4edd95a"
-    assert d9(
-        h2b("0x0100000019000000fe97ebf398b01a0870b5b78fc9e4edd95a")
-    ).aU() == uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a")
+    assert d9(h2b("0x0100000019000000fe97ebf398b01a0870b5b78fc9e4edd95a")).aU() == UUID(
+        "97ebf398-b01a-0870-b5b7-8fc9e4edd95a"
+    )
 
     # q real / python float
     # -8!3.4e
@@ -128,16 +144,19 @@ def test_vector_b9() -> None:
 
     k2 = ktni(TypeEnum.KH, 3, 2)
     assert k == k2
+    assert_er(k)
 
     k = ktn(TypeEnum.KC)
     k.kC().fromunicode("2+2")
     assert b9(k) == h2b("0x01000000110000000a0003000000322b32")
+    assert_er(k)
 
     # -8!2#0Ng
     k = ktn(TypeEnum.UU, sz=2)
     assert b9(k) == h2b(
         "0x010000002e0000000200020000000000000000000000000000000000000000000000000000000000000000000000"
     )
+    assert_er(k)
 
 
 def test_vector_d9() -> None:
@@ -178,8 +197,8 @@ def test_vector_d9() -> None:
             "0x010000002e00000002000200000097ebf398b01a0870b5b78fc9e4edd95a97ebf398b01a0870b5b78fc9e4edd95a"
         )
     ).kU() == [
-        uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
-        uuid.UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
+        UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
+        UUID("97ebf398-b01a-0870-b5b7-8fc9e4edd95a"),
     ]
 
     x = d9(h2b("0x010000001a000000000002000000000000000000000000000000"))
@@ -262,6 +281,7 @@ def test_dict_checks() -> None:
     d["key1"].t == TypeEnum.KJ
     assert d["key1"].aJ() == 1
     assert d.kS() == ["key1", "key2"]
+    assert_er(d)
 
     k = ktn(TypeEnum.KH, sz=2)
     v = ktn(TypeEnum.KH, sz=1)
@@ -302,11 +322,13 @@ def test_table_checks() -> None:
     v = kk(ktn(TypeEnum.KJ, sz=3), ktn(TypeEnum.KJ, sz=3))
     t = xt(xd(k, v))
     assert len(t) == 3
+    assert_er(t)
 
     # zero length table
     v = kk(ktn(TypeEnum.KJ), ktn(TypeEnum.KJ))
     t = xt(xd(k, v))
     assert len(t) == 0
+    assert_er(t)
 
 
 def test_table_d9() -> None:
@@ -363,6 +385,7 @@ def test_mixed() -> None:
 
     k2 = kk(ks("function"), kj(17), ks("XBT"), kb(False))
     assert b9(k) == b9(k2)
+    assert_er(k)
 
 
 def test_mixed_flip_indexing_types() -> None:
@@ -375,6 +398,7 @@ def test_mixed_flip_indexing_types() -> None:
     assert t[0]["blah"].t == -TypeEnum.KS
     assert t[1].t == TypeEnum.XD
     assert t[1]["blah"].t == -TypeEnum.KJ
+    assert_er(t)
 
 
 def test_equals() -> None:
@@ -403,28 +427,25 @@ def test_table_uuid_str_column() -> None:
     kt = xd(xt(xd(key_hdr, key_val)), xt(xd(val_hdr, val_val)))
 
     # add items
-    kt.kkey()["envelope_id"].kU().append(
-        uuid.UUID("2d948578-e9d6-79a2-8207-9df7a71f0b3b")
-    )
+    kt.kkey()["envelope_id"].kU().append(UUID("2d948578-e9d6-79a2-8207-9df7a71f0b3b"))
     kt.kvalue()["payload"].kK().append(cv("abc"))
     kt.kvalue()["time"].kJ().append(769043599044908000)
 
-    kt.kkey()["envelope_id"].kU().append(
-        uuid.UUID("409031f3-b19c-6770-ee84-6e9369c98697")
-    )
+    kt.kkey()["envelope_id"].kU().append(UUID("409031f3-b19c-6770-ee84-6e9369c98697"))
     kt.kvalue()["payload"].kK().append(cv("xy"))
     kt.kvalue()["time"].kJ().append(769043599044908000)
     assert b9(kt).hex() == exp.hex()
+    assert_er(kt)
 
 
 def test_vector_extras() -> None:
-    assert d9(b9(ktni(TypeEnum.KP, 769043599044908000))).kJ()[0] == 769043599044908000
+    assert d9b9(ktni(TypeEnum.KP, 769043599044908000)).kJ()[0] == 769043599044908000
 
-    a = uuid.uuid4()
-    b = uuid.uuid4()
-    assert d9(b9(ktnu(a, b))).kU() == [a, b]
+    a = uuid4()
+    b = uuid4()
+    assert d9b9(ktnu(a, b)).kU() == [a, b]
 
-    assert d9(b9(ktnb(True, False, True))).kB() == [True, False, True]
+    assert d9b9(ktnb(True, False, True)).kB() == [True, False, True]
 
 
 def test_kk() -> None:
