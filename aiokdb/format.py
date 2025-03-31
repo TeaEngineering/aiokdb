@@ -367,6 +367,11 @@ class HtmlFormatter(AsciiFormatter):
         d1 = obj.kvalue()
 
         colNames: Sequence[str] = d1.kkey().kS()
+        table_col_formatters = [
+            self.get_table_cell_formatter_for(obj, False, c, cn)
+            for c, cn in enumerate(colNames)
+        ]
+
         kv = d1.kvalue().kK()
 
         # stringify all cells within our rowiter
@@ -374,8 +379,7 @@ class HtmlFormatter(AsciiFormatter):
         for r in rows:
             cs = []
             for c, cn in enumerate(colNames):
-                fmt = self.get_table_cell_formatter_for(cn, False, obj, c)
-                st = fmt(kv[c], c, r)
+                st = table_col_formatters[c](kv[c], c, r)
                 cs.append(st)
             rowSample.append(cs)
 
@@ -404,7 +408,7 @@ class HtmlFormatter(AsciiFormatter):
         return self.escape(self._str_cell(obj, col, index))
 
     def get_table_cell_formatter_for(
-        self, colName: str, isKey: bool, kob: KObj, i: int
+        self, kob: KObj, isKey: bool, i: int, colName: str
     ) -> Callable[[KObj, int, Optional[int]], str]:
         return self._html_cell
 
@@ -420,16 +424,18 @@ class HtmlFormatter(AsciiFormatter):
         rows = list(self._select_rows(keyrowcount))
 
         # TODO: move get_table_cell_formatter_for lookup here
-        colMeta: List[Tuple[str, bool, KObj, int]] = [
-            (s, True, ktk, i) for i, s in enumerate(ktk.kS())
-        ] + [(s, False, ktv, i) for i, s in enumerate(ktv.kS())]
+        colMeta: List[Tuple[KObj, bool, int, str]] = [
+            (obj, True, i, s) for i, s in enumerate(ktk.kS())
+        ] + [(obj, False, i, s) for i, s in enumerate(ktv.kS())]
 
+        table_col_formatters = [self.get_table_cell_formatter_for(*x) for x in colMeta]
         rowSample: List[List[Tuple[str, bool]]] = []
         for r in rows:
             cs = []
-            for c, (s, iskey, kob, i) in enumerate(colMeta):
-                fmt = self.get_table_cell_formatter_for(s, iskey, kob, i)
-                st = fmt(kob.kvalue().kvalue().kK()[i], c, r)
+            for c, (kobj, iskey, i, s) in enumerate(colMeta):
+                ktable = ktk if iskey else ktv
+                columnv = ktable.kvalue().kvalue().kK()[i]
+                st = table_col_formatters[c](columnv, c, r)
                 cs.append((st, iskey))
             rowSample.append(cs)
 
@@ -440,7 +446,7 @@ class HtmlFormatter(AsciiFormatter):
                 f"<table{self.tc}>",
                 "  <thead>",
                 "    <tr>",
-                "\n".join(f"      <th>{s}</th>" for s, ik, kobj, i in colMeta),
+                "\n".join(f"      <th>{s}</th>" for kobj, ik, i, s in colMeta),
                 "    </tr>",
                 "  </thead>",
                 "\n".join(
