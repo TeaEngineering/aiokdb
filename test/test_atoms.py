@@ -141,10 +141,16 @@ def test_vector_b9() -> None:
     k = ktn(TypeEnum.KH)
     k.kH().extend([3, 2])
     assert b9(k) == h2b("0x010000001200000005000200000003000200")
+    assert_er(k)
 
     k2 = ktni(TypeEnum.KH, 3, 2)
     assert k == k2
     assert_er(k)
+
+    assert_er(ktni(TypeEnum.KI, 3, 2))
+    assert_er(ktni(TypeEnum.KJ, 3, 2))
+    assert_er(ktni(TypeEnum.KG, 3, 2))
+    assert_er(ktnb(TypeEnum.KB, True, False))
 
     k = ktn(TypeEnum.KC)
     k.kC().fromunicode("2+2")
