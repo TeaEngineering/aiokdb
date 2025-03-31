@@ -132,11 +132,11 @@ def test_format_keyed_table_html() -> None:
     ## certain named column in bold
     class SillyHtmlFormatter(HtmlFormatter):
         def get_table_cell_formatter_for(
-            self, colName: str, isKey: bool, kob: KObj, i: int
+            self, kob: KObj, isKey: bool, i: int, colName: str
         ) -> Callable[[KObj, int, Optional[int]], str]:
             if colName == "b":
                 return self.bold_html_cell
-            return super().get_table_cell_formatter_for(colName, isKey, kob, i)
+            return super().get_table_cell_formatter_for(kob, isKey, i, colName)
 
         def bold_html_cell(self, obj: KObj, col: int, index: Optional[int]) -> str:
             return self.markup(
