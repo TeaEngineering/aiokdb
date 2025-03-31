@@ -20,6 +20,7 @@ __all__ = [
     "Infs",
     "TypeEnum",
     "KObj",
+    "KFnAtom",
     "xd",
     "xt",
     "ka",
@@ -304,6 +305,9 @@ class KObj:
             return b9(self) == b9(other)
         return NotImplemented
 
+    def __repr__(self) -> str:
+        raise self._te()
+
 
 # constructors always take type t, optional context, and
 # optionally a size, attr pair
@@ -442,6 +446,28 @@ class KObjAtom(KObj):
         self.data = data[offset : offset + bs]
         return self, offset + bs
 
+    def __repr__(self) -> str:
+        if self.t == -TypeEnum.KI:
+            return f"ki({self.aI()})"
+        elif self.t == -TypeEnum.KJ:
+            return f"kj({self.aJ()})"
+        elif self.t == -TypeEnum.KB:
+            return f"kb({self.aB()})"
+        elif self.t == -TypeEnum.KG:
+            return f"kg({self.aG()})"
+        elif self.t == -TypeEnum.KE:
+            return f"ke({repr(self.aE())})"
+        elif self.t == -TypeEnum.KF:
+            return f"kf({repr(self.aF())})"
+        elif self.t == -TypeEnum.KH:
+            return f"kh({self.aH()})"
+        elif self.t == -TypeEnum.KC:
+            return f"kc({repr(self.aC())})"
+        elif self.t == TypeEnum.NIL:
+            return "ka(TypeEnum.NIL)"
+        else:
+            raise Exception(f"__repr__ NYI for t={self.t}")
+
 
 class KSymAtom(KObj):
     def __init__(
@@ -478,6 +504,9 @@ class KSymAtom(KObj):
         self.ss(data[offset : offset + bs - 1].decode("ascii"))
         return self, offset + bs
 
+    def __repr__(self) -> str:
+        return f"ks({repr(self.aS())})"
+
 
 class KErrAtom(KObj):
     def __init__(
@@ -511,10 +540,12 @@ class KFnAtom(KObj):
     def __init__(
         self,
         context: KContext = DEFAULT_CONTEXT,
+        prelude: bytes = b"",
+        data: bytes = b"",
     ) -> None:
         super().__init__(TypeEnum.FN, context)
-        self.prelude: bytes = b""
-        self.data: bytes = b""
+        self.prelude: bytes = prelude
+        self.data: bytes = data
 
     def aS(self) -> str:
         return self.data.decode("ascii")
@@ -522,6 +553,9 @@ class KFnAtom(KObj):
     def ss(self, s: str) -> KObj:
         self.data = bytes(s, "ascii")
         return self
+
+    def __repr__(self) -> str:
+        return f"KFnAtom(prelude={repr(self.prelude)}, data={repr(self.data)})"
 
     # serialisation
     def _databytes(self) -> bytes:
@@ -594,6 +628,13 @@ class KByteArray(KRangedType):
             f"<{len(self._g)}B", *self._g
         )
 
+    def __repr__(self) -> str:
+        if self.t == TypeEnum.KB:
+            parts = ",".join(repr(r) for r in self.kB())
+            return f"ktnb({parts})"
+        else:
+            return super().__repr__()
+
     def kG(self) -> "MutableSequence[int]":
         return self._g
 
@@ -620,6 +661,10 @@ class KShortArray(KRangedType):
         return struct.pack("<bBI", self.t, self.attrib, len(self._h)) + struct.pack(
             f"<{len(self._h)}H", *self._h
         )
+
+    def __repr__(self) -> str:
+        parts = ", ".join(repr(r) for r in self.kH())
+        return f"ktni(TypeEnum.KH, {parts})"
 
     def kH(self) -> "MutableSequence[int]":
         return self._h
@@ -651,6 +696,10 @@ class KIntArray(KRangedType):
             pi = struct.pack(f"<{len(self._i)}I", *self._i)
         return struct.pack("<bBI", self.t, self.attrib, len(self._i)) + pi
 
+    def __repr__(self) -> str:
+        parts = ", ".join(repr(r) for r in self.kH())
+        return f"ktni(TypeEnum.KI, {parts})"
+
     def kI(self) -> "MutableSequence[int]":
         return self._i
 
@@ -679,6 +728,10 @@ class KIntSymArray(KIntArray):
         for j in self._i:
             parts.append(self.context.lookup_bytes(j))
         return b"".join(parts)
+
+    def __repr__(self) -> str:
+        strs = ", ".join(repr(s) for s in self.kS())
+        return f"ktns({strs})"
 
     def kS(self) -> "Sequence[str]":
         # Warning: accessor read-only
@@ -719,6 +772,10 @@ class KLongArray(KRangedType):
         return struct.pack("<bBI", self.t, self.attrib, len(self._j)) + struct.pack(
             f"<{len(self._j)}q", *self._j
         )
+
+    def __repr__(self) -> str:
+        parts = ", ".join(repr(j) for j in self._j)
+        return f"ktni({repr(int(self.t))}, {parts})"
 
     def kJ(self) -> "MutableSequence[int]":
         return self._j
@@ -791,6 +848,9 @@ class KCharArray(KRangedType):
         bs = self._c.tounicode().encode("ascii")
         return struct.pack("<bBI", self.t, self.attrib, len(self._c)) + bs
 
+    def __repr__(self) -> str:
+        return f"cv({repr(self.aS())})"
+
     def kC(self) -> array.array:  # type: ignore[type-arg]
         return self._c
 
@@ -821,6 +881,9 @@ class KObjArray(KRangedType):
         parts.extend(ko._databytes() for ko in self._k)
         return b"".join(parts)
 
+    def __repr__(self) -> str:
+        return "kk(" + (", ".join([repr(k) for k in self._k])) + ")"
+
     def kK(self) -> "MutableSequence[KObj]":
         return self._k
 
@@ -847,6 +910,10 @@ class KUUIDArray(KRangedType):
         parts = [struct.pack("<bBI", self.t, self.attrib, len(self._u))]
         parts.extend(uu.bytes for uu in self._u)
         return b"".join(parts)
+
+    def __repr__(self) -> str:
+        parts = ", ".join([repr(k) for k in self._u])
+        return f"ktnu({parts})"
 
     def kU(self) -> "MutableSequence[uuid.UUID]":
         return self._u
@@ -1049,6 +1116,10 @@ class KDict(KObj):
             + self._kvalue._databytes()
         )
 
+    def __repr__(self) -> str:
+        suffix = ", sorted=True" if self.t == TypeEnum.SD else ""
+        return f"xd({repr(self._kkey)}, {repr(self._kvalue)}{suffix})"
+
     def __len__(self) -> int:
         return len(self._kkey)
 
@@ -1150,6 +1221,10 @@ class KFlip(KObj):
 
     def _databytes(self) -> bytes:
         return struct.pack("<bB", self.t, self.attrib) + self._kvalue._databytes()
+
+    def __repr__(self) -> str:
+        # TODO: flip attr
+        return f"xt({repr(self._kvalue)})"
 
     def kvalue(self) -> KObj:
         return self._kvalue
