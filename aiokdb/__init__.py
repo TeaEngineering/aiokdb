@@ -308,6 +308,10 @@ class KObj:
     def __repr__(self) -> str:
         raise self._te()
 
+    def __str__(self) -> str:
+        klass = self.__class__
+        return f"<{klass.__module__}.{klass.__qualname__} object at {hex(id(self))}>"
+
 
 # constructors always take type t, optional context, and
 # optionally a size, attr pair
