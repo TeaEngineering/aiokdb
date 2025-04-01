@@ -61,6 +61,12 @@ def test_atoms_round_trip() -> None:
     # enumerates and stores the index, then reverses the lookup
     assert ks("hello").aS() == "hello"
     assert_er(ks("hello"))
+    assert repr(ks("hello")) == "ks('hello')"
+
+    # string representation is non-recurisive, not human friendly, quick to evaluate
+    s = str(ks("hello"))
+    assert s.startswith("<aiokdb.KSymAtom object at 0x")
+    assert s.endswith(">")
 
 
 def test_atoms_b9() -> None:
@@ -150,7 +156,7 @@ def test_vector_b9() -> None:
     assert_er(ktni(TypeEnum.KI, 3, 2))
     assert_er(ktni(TypeEnum.KJ, 3, 2))
     assert_er(ktni(TypeEnum.KG, 3, 2))
-    assert_er(ktnb(TypeEnum.KB, True, False))
+    assert_er(ktnb(True, False))
 
     k = ktn(TypeEnum.KC)
     k.kC().fromunicode("2+2")
