@@ -44,9 +44,15 @@ def ktnb(*bools: bool) -> KObj:
     return v
 
 
-def ktnf(*floats: float) -> KObj:
-    v = ktn(TypeEnum.KF)
-    v.kF().extend(floats)
+def ktnf(t: TypeEnum, *floats: float) -> KObj:
+    v = ktn(t)
+    if t == TypeEnum.KF:
+        v.kF().extend(floats)
+    elif t == TypeEnum.KE:
+        v.kE().extend(floats)
+    else:
+        raise ValueError(f"No float array initialiser for {tn(t)}")
+
     return v
 
 

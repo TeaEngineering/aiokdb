@@ -509,6 +509,8 @@ class KSymAtom(KObj):
         return self, offset + bs
 
     def __repr__(self) -> str:
+        if self.t == TypeEnum.KRR:
+            return f"krr({repr(self.aS())})"
         return f"ks({repr(self.aS())})"
 
 
@@ -606,12 +608,11 @@ class KByteArray(KRangedType):
 
     def __repr__(self) -> str:
         if self.t == TypeEnum.KB:
-            parts = ",".join(repr(r) for r in self.kB())
+            parts = ", ".join(repr(r) for r in self.kB())
             return f"ktnb({parts})"
         elif self.t == TypeEnum.KG:
-            parts = ",".join(repr(r) for r in self.kG())
+            parts = ", ".join(repr(r) for r in self.kG())
             return f"ktni(TypeEnum.KG, {parts})"
-
         else:
             return super().__repr__()
 
@@ -781,6 +782,10 @@ class KFloatArray(KRangedType):
             f"<{len(self._e)}f", *self._e
         )
 
+    def __repr__(self) -> str:
+        parts = ", ".join(repr(f) for f in self._e)
+        return f"ktnf({repr(int(self.t))}, {parts})"
+
     def kE(self) -> "MutableSequence[float]":
         return self._e
 
@@ -804,6 +809,10 @@ class KDoubleArray(KRangedType):
         return struct.pack("<bBI", self.t, self.attrib, len(self._f)) + struct.pack(
             f"<{len(self._f)}d", *self._f
         )
+
+    def __repr__(self) -> str:
+        parts = ", ".join(repr(f) for f in self._f)
+        return f"ktnf({repr(int(self.t))}, {parts})"
 
     def kF(self) -> "MutableSequence[float]":
         return self._f
