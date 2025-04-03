@@ -512,34 +512,6 @@ class KSymAtom(KObj):
         return f"ks({repr(self.aS())})"
 
 
-class KErrAtom(KObj):
-    def __init__(
-        self,
-        context: KContext = DEFAULT_CONTEXT,
-    ) -> None:
-        super().__init__(TypeEnum.KRR, context)
-        self.data: bytes = b""
-
-    def aS(self) -> str:
-        return self.data[:-1].decode("ascii")
-
-    def ss(self, s: str) -> KObj:
-        self.data = bytes(s, "ascii") + b"\x00"
-        return self
-
-    # serialisation
-    def _databytes(self) -> bytes:
-        return super()._databytes() + self.data
-
-    def _paysz(self) -> int:
-        return super()._paysz() + len(self.data)
-
-    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
-        bs = data[offset:].index(b"\x00") + 1
-        self.data = data[offset : offset + bs - 1]
-        return self, offset + bs
-
-
 class KFnAtom(KObj):
     def __init__(
         self,
