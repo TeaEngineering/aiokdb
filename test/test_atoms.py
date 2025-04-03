@@ -28,7 +28,7 @@ from aiokdb import (
     xd,
     xt,
 )
-from aiokdb.extras import ktnb, ktni, ktns, ktnu
+from aiokdb.extras import ktnb, ktnf, ktni, ktns, ktnu
 
 
 def h2b(hx: str) -> bytes:
@@ -80,21 +80,23 @@ def test_atoms_b9() -> None:
     assert b9(kc(" ")) == h2b("0x010000000a000000f620")
 
 
-def d9b9(obj: KObj) -> KObj:
+def d9b9(obj: KObj, exprepr: str) -> KObj:
+    assert repr(obj) == exprepr
     assert_er(obj)
     return d9(b9(obj))
 
 
 def test_atoms_d9b9() -> None:
-    assert d9b9(kb(True)).aB() is True
-    assert d9b9(kb(False)).aB() is False
-    assert d9b9(kg(12)).aG() == 12
-    assert d9b9(ke(3.4)).aE() == pytest.approx(3.4, 0.0001)
-    assert d9b9(kf(3.4)).aF() == 3.4
-    assert d9b9(kh(12)).aH() == 12
-    assert d9b9(ki(12)).aI() == 12
-    assert d9b9(kj(12)).aJ() == 12
-    assert d9b9(kc(" ")).aC() == " "
+    assert d9b9(kb(True), "kb(True)").aB() is True
+    assert d9b9(kb(False), "kb(False)").aB() is False
+    assert d9b9(kg(12), "kg(12)").aG() == 12
+    assert d9b9(ke(97.8125), "ke(97.8125)").aE() == pytest.approx(97.8125, 0.00001)
+    assert d9b9(kf(3.4), "kf(3.4)").aF() == 3.4
+    assert d9b9(kh(12), "kh(12)").aH() == 12
+    assert d9b9(ki(12), "ki(12)").aI() == 12
+    assert d9b9(kj(12), "kj(12)").aJ() == 12
+    assert d9b9(kc(" "), "kc(' ')").aC() == " "
+    assert d9b9(krr("Error!"), "krr('Error!')").aS() == "Error!"
 
 
 def test_atoms_d9() -> None:
@@ -153,10 +155,16 @@ def test_vector_b9() -> None:
     assert k == k2
     assert_er(k)
 
+    assert_er(ktnb(True, False, True))
+    assert_er(ktni(TypeEnum.KH, 5, 3, 2))
     assert_er(ktni(TypeEnum.KI, 3, 2))
     assert_er(ktni(TypeEnum.KJ, 3, 2))
     assert_er(ktni(TypeEnum.KG, 3, 2))
     assert_er(ktnb(True, False))
+    assert_er(ktnf(TypeEnum.KF, 3.1, 2.3))
+    assert_er(ktnf(TypeEnum.KE, 3.1, 2.3))
+    assert_er(cv("hheeeeelllooo"))  # char vector
+    assert_er(ktns("ab", "cd", "ef"))  # sym vector
 
     k = ktn(TypeEnum.KC)
     k.kC().fromunicode("2+2")
@@ -451,13 +459,22 @@ def test_table_uuid_str_column() -> None:
 
 
 def test_vector_extras() -> None:
-    assert d9b9(ktni(TypeEnum.KP, 769043599044908000)).kJ()[0] == 769043599044908000
+    assert (
+        d9b9(
+            ktni(TypeEnum.KP, 769043599044908000), "ktni(12, 769043599044908000)"
+        ).kJ()[0]
+        == 769043599044908000
+    )
 
     a = uuid4()
     b = uuid4()
-    assert d9b9(ktnu(a, b)).kU() == [a, b]
+    assert d9b9(ktnu(a, b), f"ktnu({repr(a)}, {repr(b)})").kU() == [a, b]
 
-    assert d9b9(ktnb(True, False, True)).kB() == [True, False, True]
+    assert d9b9(ktnb(True, False, True), "ktnb(True, False, True)").kB() == [
+        True,
+        False,
+        True,
+    ]
 
 
 def test_kk() -> None:

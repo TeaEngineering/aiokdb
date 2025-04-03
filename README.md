@@ -60,7 +60,7 @@ Arrays are implemented with subtypes that use [Python's native arrays module](ht
    5  h    short       KH       .kH()     -            ktni() MutableSequence[int]        KShortArray
    6  i    int         KI       .kI()     -            ktni() MutableSequence[int]        KIntArray
    7  j    long        KJ       .kJ()     -            ktni() MutableSequence[int]        KLongArray
-   8  e    real        KE       .kE()     -            -      MutableSequence[float]      KFloatArray
+   8  e    real        KE       .kE()     -            ktnf() MutableSequence[float]      KFloatArray
    9  f    float       KF       .kF()     -            ktnf() MutableSequence[float]      KDoubleArray
   10  c    char        KC       .kC()     -            cv()   array.array                 KCharArray
   11  s    symbol      KS       .kS()     -            ktns() Sequence[str]               KIntSymArray
@@ -74,7 +74,7 @@ Arrays are implemented with subtypes that use [Python's native arrays module](ht
   19  t    time        KT       -         -            -      -
   98       flip        XT       .kkey(), .kvalue()     xt()   KObj, KObj                  KFlip
   99       dict        XD       .kkey(), .kvalue()     xd()   KObj, KObj                  KDict
- 100       function    FN       -         -            -      -
+ 100       function    FN       -         -            **      -                           KFnAtom
  101  ::   nil        NIL       -         -            kNil   -
  127       `s#dict     SD       .kkey(), .kvalue()     -      KObj, KObj                  KDict
 -128  '    err        KRR       .aS()     .ss()        krr()  str                         KSymAtom
@@ -82,8 +82,11 @@ Arrays are implemented with subtypes that use [Python's native arrays module](ht
 
 Serialisation is handled by the `b9` function, which encodes a `KObj` to a python `bytes`, and the `d9` function which takes a `bytes` and returns a `KObj`.
 
+Calling `repr()` on  `KObj` returns a string representation that, when passed to `eval()`, will exactly recreate the `KObj`. This may be an expensive operation for deeply nested or large tables.
+
 * Atoms are created by `ka`, `kb`, `ku`, `kg`, `kh`, `ki`, `kj`, `ke`, `kf`, `kc`, `ks`, `kt`, `kd`, `kz`, `ktj`
-* Lists with `ktn` and `knk`
+* Vectors from python primitives with `ktnu`, `ktni`, `ktnb`, `ktnf`, `ktns`, passing desired `TypeEnum` value as the first argument.
+* Mixed-type objects lists with `kk`.
 * Dictionaries with `xd` and tables with `xt`.
 
 Python manages garbage collection, so none of the reference counting primitives exist, i.e. `k.r` and functions `r1`, `r0` and `m9`, `setm`.
