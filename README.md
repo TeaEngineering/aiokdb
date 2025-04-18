@@ -32,52 +32,52 @@ The `result` object is a K-like Python object (a `KObj`), having the usual signe
 Arrays are implemented with subtypes that use [Python's native arrays module](https://docs.python.org/3/library/array.html) for efficient array types. The `MutableSequence` arrays are returned using the usual array accessor functions `.kI()`, `.kB()`, `.kS()` etc.
 
 ```
- kdb type  name       python    python    python       python python                     implementation
-  n   c               TypeEnum  accessor  setter       create type
----------------------------------------------------------------------------------------------------------------
- -19  t    time       -KT       -         -            -      -                           KObjAtom
- -18  v    second     -KV       -         -            -      -                           KObjAtom
- -17  u    minute     -KU       -         -            -      -                           KObjAtom
- -16  n    timespan   -KN       -         -            -      -                           KObjAtom
- -15  z    datetime   -KZ       -         -            -      -                           KObjAtom
- -14  d    date       -KD       -         -            -      -                           KObjAtom
- -13  m    month      -KM       -         -            -      -                           KObjAtom
- -12  p    timestamp  -KP       -         -            -      -                           KObjAtom
- -11  s    symbol     -KS       .aS()     .ss("sym")   ks()   str                         KSymAtom
- -10  c    char       -KC       .aC()     .c("c")      kc()   str (len 1)                 KObjAtom
-  -9  f    float      -KF       .aF()     .f(6.1)      kf()   float                       KObjAtom
-  -8  e    real       -KE       .aE()     .f(6.2)      ke()   float                       KObjAtom
-  -7  j    long       -KJ       .aJ()     .j(7)        kj()   int                         KObjAtom
-  -6  i    int        -KI       .aI()     .i(6)        ki()   int                         KObjAtom
-  -5  h    short      -KH       .aH()     .h(5)        kh()   int                         KObjAtom
-  -4  x    byte       -KG       .aG()     .g(4)        kg()   int                         KObjAtom
-  -2  g    guid       -UU       .aU()     .uu(UUID())  kuu()  uuid.UUID                   KObjAtom
-  -1  b    boolean    -KB       .aB()     .b(True)     kb()   bool                        KObjAtom
-   0  *    list        K        .kK()     -            kk()   MutableSequence[KObj]       KObjArray
-   1  b    boolean     KB       .kB()     -            ktnb() MutableSequence[bool]       KByteArray
-   2  g    guid        UU       .kU()     -            ktnu() MutableSequence[uuid.UUID]  KUUIDArray
-   4  x    byte        KG       .kG()     -            ktni() MutableSequence[int]        KByteArray
-   5  h    short       KH       .kH()     -            ktni() MutableSequence[int]        KShortArray
-   6  i    int         KI       .kI()     -            ktni() MutableSequence[int]        KIntArray
-   7  j    long        KJ       .kJ()     -            ktni() MutableSequence[int]        KLongArray
-   8  e    real        KE       .kE()     -            ktnf() MutableSequence[float]      KFloatArray
-   9  f    float       KF       .kF()     -            ktnf() MutableSequence[float]      KDoubleArray
-  10  c    char        KC       .kC()     -            cv()   array.array                 KCharArray
-  11  s    symbol      KS       .kS()     -            ktns() Sequence[str]               KIntSymArray
-  12  p    timestamp   KP       -         -            -      -
-  13  m    month       KM       -         -            -      -
-  14  d    date        KD       -         -            -      -
-  15  z    datetime    KZ       -         -            -      -
-  16  n    timespan    KN       -         -            -      -
-  17  u    minute      KU       -         -            -      -
-  18  v    second      KV       -         -            -      -
-  19  t    time        KT       -         -            -      -
-  98       flip        XT       .kkey(), .kvalue()     xt()   KObj, KObj                  KFlip
-  99       dict        XD       .kkey(), .kvalue()     xd()   KObj, KObj                  KDict
- 100       function    FN       -         -            **      -                           KFnAtom
- 101  ::   nil        NIL       -         -            kNil   -
- 127       `s#dict     SD       .kkey(), .kvalue()     -      KObj, KObj                  KDict
--128  '    err        KRR       .aS()     .ss()        krr()  str                         KSymAtom
+ kdb type name       python    python    python       python  python
+  n   c              TypeEnum  accessor  setter       create  type
+ ------------------------------------------------------------------------------------
+ -19  t   time       -KT       -         -            -       -
+ -18  v   second     -KV       -         -            -       -
+ -17  u   minute     -KU       -         -            -       -
+ -16  n   timespan   -KN       -         -            -       -
+ -15  z   datetime   -KZ       -         -            -       -
+ -14  d   date       -KD       -         -            -       -
+ -13  m   month      -KM       -         -            -       -
+ -12  p   timestamp  -KP       -         -            -       -
+ -11  s   symbol     -KS       .aS()     .ss("sym")   ks()    str
+ -10  c   char       -KC       .aC()     .c("c")      kc()    str (len 1)
+  -9  f   float      -KF       .aF()     .f(6.1)      kf()    float
+  -8  e   real       -KE       .aE()     .f(6.2)      ke()    float
+  -7  j   long       -KJ       .aJ()     .j(7)        kj()    int
+  -6  i   int        -KI       .aI()     .i(6)        ki()    int
+  -5  h   short      -KH       .aH()     .h(5)        kh()    int
+  -4  x   byte       -KG       .aG()     .g(4)        kg()    int
+  -2  g   guid       -UU       .aU()     .uu(UUID())  kuu()   uuid.UUID
+  -1  b   boolean    -KB       .aB()     .b(True)     kb()    bool
+   0  *   list        K        .kK()     -            kk()    MutableSequence[KObj]
+   1  b   boolean     KB       .kB()     -            ktnb()  MutableSequence[bool]
+   2  g   guid        UU       .kU()     -            ktnu()  MutableSequence[uuid.UUID]
+   4  x   byte        KG       .kG()     -            ktni()  MutableSequence[int]
+   5  h   short       KH       .kH()     -            ktni()  MutableSequence[int]
+   6  i   int         KI       .kI()     -            ktni()  MutableSequence[int]
+   7  j   long        KJ       .kJ()     -            ktni()  MutableSequence[int]
+   8  e   real        KE       .kE()     -            ktnf()  MutableSequence[float]
+   9  f   float       KF       .kF()     -            ktnf()  MutableSequence[float]
+  10  c   char        KC       .kC()     -            cv()    array.array
+  11  s   symbol      KS       .kS()     -            ktns()  Sequence[str]
+  12  p   timestamp   KP       -         -            -       -
+  13  m   month       KM       -         -            -       -
+  14  d   date        KD       -         -            -       -
+  15  z   datetime    KZ       -         -            -       -
+  16  n   timespan    KN       -         -            -       -
+  17  u   minute      KU       -         -            -       -
+  18  v   second      KV       -         -            -       -
+  19  t   time        KT       -         -            -       -
+  98      flip        XT       .kkey(), .kvalue()     xt()    KObj, KObj
+  99      dict        XD       .kkey(), .kvalue()     xd()    KObj, KObj
+ 100      function    FN       -         -            KFnAtom       -
+ 101  ::  nil        NIL       -         -            kNil    -
+ 127      `s#dict     SD       .kkey(), .kvalue()     -       KObj, KObj
+-128  '   err        KRR       .aS()     .ss()        krr()   str
 ```
 
 Serialisation is handled by the `b9` function, which encodes a `KObj` to a python `bytes`, and the `d9` function which takes a `bytes` and returns a `KObj`.
