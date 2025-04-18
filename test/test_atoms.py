@@ -78,6 +78,11 @@ def test_atoms_b9() -> None:
     assert b9(kb(False)) == h2b("0x010000000a000000ff00")
     assert b9(kb(True)) == h2b("0x010000000a000000ff01")
     assert b9(kc(" ")) == h2b("0x010000000a000000f620")
+    assert b9(cv("9ỹT")) == h2b("0x01000000130000000a000500000039e1bbb954")
+    # -8!`$"9ỹT"
+    assert b9(ks("9ỹT")) == h2b("0x010000000f000000f539e1bbb95400")
+    with pytest.raises(ValueError):
+        kc("ỹ")  # no multibyte atomic char
 
 
 def d9b9(obj: KObj, exprepr: str) -> KObj:
@@ -97,6 +102,8 @@ def test_atoms_d9b9() -> None:
     assert d9b9(kj(12), "kj(12)").aJ() == 12
     assert d9b9(kc(" "), "kc(' ')").aC() == " "
     assert d9b9(krr("Error!"), "krr('Error!')").aS() == "Error!"
+    assert d9b9(cv("9ỹT"), "cv('9ỹT')").aS() == "9ỹT"
+    assert d9b9(ks("9ỹT"), "ks('9ỹT')").aS() == "9ỹT"
 
 
 def test_atoms_d9() -> None:
