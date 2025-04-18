@@ -133,9 +133,7 @@ class KContext:
         self.symbols_enc: Dict[int, Tuple[str, bytes]] = {}
 
     def ss(self, s: str) -> int:
-        # we don't want any surprises trying to serialise non-ascii symbols later
-        # so force non-ascii characters out now
-        bs = bytes(s, "ascii") + b"\x00"
+        bs = bytes(s, "utf-8") + b"\x00"
         idx = self.symbols.setdefault(s, len(self.symbols))
         # TODO this should be a list
         self.symbols_enc[idx] = (s, bs)
@@ -336,11 +334,11 @@ class KObjAtom(KObj):
         return self
 
     def c(self, c: str) -> KObj:
-        bs = c.encode("ascii")
         if self.t not in [-TypeEnum.KC]:
             raise ValueError(f"wrong type {self._tn()} for c()")
+        bs = c.encode("utf-8")
         if len(bs) != 1:
-            raise ValueError(".c() takes single character")
+            raise ValueError(".c() takes single ASCII character")
         self.data = bs
         return self
 
@@ -434,8 +432,7 @@ class KObjAtom(KObj):
     def aC(self) -> str:
         if self.t not in [-TypeEnum.KC]:
             raise ValueError(f"wrong type {self._tn()} for aC")
-        bs = struct.unpack("c", self.data)[0]
-        return cast(str, bs.decode("ascii"))
+        return self.data.decode("utf-8")
 
     # serialisation
     def _databytes(self) -> bytes:
@@ -505,7 +502,7 @@ class KSymAtom(KObj):
 
     def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
         bs = data[offset:].index(b"\x00") + 1
-        self.ss(data[offset : offset + bs - 1].decode("ascii"))
+        self.ss(data[offset : offset + bs - 1].decode("utf-8"))
         return self, offset + bs
 
     def __repr__(self) -> str:
@@ -831,11 +828,12 @@ class KCharArray(KRangedType):
         self._c: array.array[str] = array.array("u", [" "] * sz)
 
     def _paysz(self) -> int:
-        return 2 + 4 + 1 * len(self._c)
+        bs = self._c.tounicode().encode("utf-8")
+        return 2 + 4 + 1 * len(bs)
 
     def _databytes(self) -> bytes:
-        bs = self._c.tounicode().encode("ascii")
-        return struct.pack("<bBI", self.t, self.attrib, len(self._c)) + bs
+        bs = self._c.tounicode().encode("utf-8")
+        return struct.pack("<bBI", self.t, self.attrib, len(bs)) + bs
 
     def __repr__(self) -> str:
         return f"cv({repr(self.aS())})"
@@ -850,7 +848,7 @@ class KCharArray(KRangedType):
         return len(self._c)
 
     def _ranged_frombytes(self, sz: int, data: bytes, offset: int) -> Tuple[KObj, int]:
-        s = data[offset : offset + sz].decode("ascii")
+        s = data[offset : offset + sz].decode("utf-8")
         self._c = array.array("u", [])
         self._c.fromunicode(s)
         return self, offset + sz
