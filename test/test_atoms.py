@@ -104,6 +104,7 @@ def test_atoms_d9b9() -> None:
     assert d9b9(krr("Error!"), "krr('Error!')").aS() == "Error!"
     assert d9b9(cv("9ỹT"), "cv('9ỹT')").aS() == "9ỹT"
     assert d9b9(ks("9ỹT"), "ks('9ỹT')").aS() == "9ỹT"
+    assert d9b9(ktns("9ỹT"), "ktns('9ỹT')").kS()[0] == "9ỹT"
 
 
 def test_atoms_d9() -> None:
