@@ -731,7 +731,7 @@ class KIntSymArray(KIntArray):
         self._i = array.array("l", [0] * sz)
         for i in range(sz):
             bs = data.index(b"\x00", offset) - offset
-            s = data[offset : offset + bs].decode("ascii")
+            s = data[offset : offset + bs].decode("utf-8")
             d = self.context.ss(s)
             self._i[i] = d
             offset += bs + 1
@@ -944,7 +944,7 @@ def d9(data: bytes) -> KObj:
         if pos != msglen:
             raise Exception(f"Final position at {pos} expected {msglen}")
     except ValueError as ve:
-        raise Exception(f"While unpacking buffer {data!r}") from ve
+        raise Exception(f"While unpacking buffer {data[:100]!r}") from ve
     return k
 
 
