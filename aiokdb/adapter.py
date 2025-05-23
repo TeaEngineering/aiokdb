@@ -1,3 +1,4 @@
+import array
 from collections.abc import MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Iterable, Union, overload
 
@@ -36,7 +37,7 @@ class BoolByteAdaptor(BaseBoolMutSeq):
         self, index: Union[int, slice], item: Union[bool, Iterable[bool]]
     ) -> None:
         if isinstance(index, slice) and isinstance(item, Iterable):
-            self.data[index] = [{True: 1, False: 0}[i] for i in item]
+            self.data[index] = array.array("B", [{True: 1, False: 0}[i] for i in item])
         elif isinstance(index, int) and isinstance(item, bool):
             self.data[index] = {True: 1, False: 0}[item]
         else:
@@ -83,7 +84,7 @@ class SymIntAdaptor(BaseSymMutSeq):
         self, index: Union[int, slice], item: Union[str, Iterable[str]]
     ) -> None:
         if isinstance(index, slice) and isinstance(item, Iterable):
-            self.data[index] = [self.context.ss(i) for i in item]
+            self.data[index] = array.array("l", [self.context.ss(i) for i in item])
         elif isinstance(index, int) and isinstance(item, str):
             self.data[index] = self.context.ss(item)
         else:
