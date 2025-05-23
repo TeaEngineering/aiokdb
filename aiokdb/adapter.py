@@ -98,7 +98,7 @@ class SymIntAdaptor(BaseSymMutSeq):
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Sequence):
             if len(self) == len(other):
-                return all([a == b for a, b in zip(self, other)])
+                return all(a == b for a, b in zip(self, other))
             else:
                 return False
         raise TypeError()
