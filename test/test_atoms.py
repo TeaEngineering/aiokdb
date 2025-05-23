@@ -290,6 +290,9 @@ def test_vector_mutate_insert() -> None:
     k.kS().insert(2, "Q")
     assert repr(k) == "ktns('P', 'Y', 'Q')"
 
+    k.kS()[1] = "S"
+    assert repr(k) == "ktns('P', 'S', 'Q')"
+
 
 def test_overflows_KG() -> None:
     k = ktn(TypeEnum.KG, attr=AttrEnum.SORTED)

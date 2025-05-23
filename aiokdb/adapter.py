@@ -84,7 +84,7 @@ class SymIntAdaptor(BaseSymMutSeq):
     ) -> None:
         if isinstance(index, slice) and isinstance(item, Iterable):
             self.data[index] = [self.context.ss(i) for i in item]
-        elif isinstance(index, int) and isinstance(item, bool):
+        elif isinstance(index, int) and isinstance(item, str):
             self.data[index] = self.context.ss(item)
         else:
             raise TypeError()
