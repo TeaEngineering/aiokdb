@@ -248,7 +248,10 @@ def test_vector_mutate_insert() -> None:
 
     k = ktnb()
     k.kB().insert(0, False)
-    assert repr(k) == "ktnb(False)"
+    k.kB().insert(0, True)
+    assert repr(k) == "ktnb(True, False)"
+    k.kB()[0:2] = [False, True]
+    assert repr(k) == "ktnb(False, True)"
 
     k = ktnu()
     k.kU().insert(0, UUID("e3599f41-e9b7-4452-b8e3-facf91d11633"))
@@ -292,6 +295,9 @@ def test_vector_mutate_insert() -> None:
 
     k.kS()[1] = "S"
     assert repr(k) == "ktns('P', 'S', 'Q')"
+
+    k.kS()[0:2] = ["A", "B"]
+    assert repr(k) == "ktns('A', 'B', 'Q')"
 
 
 def test_overflows_KG() -> None:
