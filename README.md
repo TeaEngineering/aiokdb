@@ -63,7 +63,7 @@ Arrays are implemented with subtypes that use [Python's native arrays module](ht
    8  e   real        KE       .kE()     -            ktnf()  MutableSequence[float]
    9  f   float       KF       .kF()     -            ktnf()  MutableSequence[float]
   10  c   char        KC       .kC()     -            cv()    array.array
-  11  s   symbol      KS       .kS()     -            ktns()  Sequence[str]
+  11  s   symbol      KS       .kS()     -            ktns()  MutableSequence[str]
   12  p   timestamp   KP       -         -            -       -
   13  m   month       KM       -         -            -       -
   14  d   date        KD       -         -            -       -

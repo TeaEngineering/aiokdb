@@ -3,11 +3,12 @@ import enum
 import logging
 import struct
 import uuid
-from collections.abc import MutableSequence, Sequence
+from collections.abc import MutableSequence
 from typing import Any, Dict, List, Tuple, Type, Union, cast
 
-from aiokdb.adapter import BoolByteAdaptor
+from aiokdb.adapter import BoolByteAdaptor, SymIntAdaptor
 from aiokdb.compress import decompress
+from aiokdb.context import KContext
 
 __all__ = [
     "b9",
@@ -32,6 +33,7 @@ __all__ = [
     "kj",
     "ks",
     "kuu",
+    "KContext",
 ]
 
 # mypy: disallow-untyped-defs
@@ -125,25 +127,6 @@ ATOM_LENGTH: Dict[int, int] = {
     TypeEnum.KZ: 8,
     -TypeEnum.NIL: 1,  # TODO: unhack this
 }
-
-
-class KContext:
-    def __init__(self) -> None:
-        self.symbols: Dict[str, int] = {}
-        self.symbols_enc: Dict[int, Tuple[str, bytes]] = {}
-
-    def ss(self, s: str) -> int:
-        bs = bytes(s, "utf-8") + b"\x00"
-        idx = self.symbols.setdefault(s, len(self.symbols))
-        # TODO this should be a list
-        self.symbols_enc[idx] = (s, bs)
-        return idx
-
-    def lookup_str(self, idx: int) -> str:
-        return self.symbols_enc[idx][0]
-
-    def lookup_bytes(self, idx: int) -> bytes:
-        return self.symbols_enc[idx][1]
 
 
 DEFAULT_CONTEXT = KContext()
@@ -278,7 +261,7 @@ class KObj:
     def kC(self) -> array.array:  # type: ignore[type-arg]
         raise self._te()
 
-    def kS(self) -> "Sequence[str]":
+    def kS(self) -> "MutableSequence[str]":
         raise self._te()
 
     # dictionary/flip
@@ -714,12 +697,8 @@ class KIntSymArray(KIntArray):
         strs = ", ".join(repr(s) for s in self.kS())
         return f"ktns({strs})"
 
-    def kS(self) -> "Sequence[str]":
-        # Warning: accessor read-only
-        s = []
-        for j in self._i:
-            s.append(self.context.lookup_str(j))
-        return s
+    def kS(self) -> "MutableSequence[str]":
+        return SymIntAdaptor(self._i, self.context)
 
     def appendS(self, *ss: str) -> KObj:
         for s in ss:
@@ -1119,7 +1098,7 @@ class KDict(KObj):
     def kvalue(self) -> KObj:
         return self._kvalue
 
-    def kS(self) -> "Sequence[str]":
+    def kS(self) -> "MutableSequence[str]":
         # key names
         if self._kkey.t == TypeEnum.KS:
             return self.kkey().kS()
@@ -1249,7 +1228,7 @@ class KFlip(KObj):
             except ValueError:
                 raise KeyError(f"Column not found {item}")
 
-    def kS(self) -> "Sequence[str]":
+    def kS(self) -> "MutableSequence[str]":
         # column names
         return self.kvalue().kkey().kS()
 
