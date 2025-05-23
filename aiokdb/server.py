@@ -14,6 +14,12 @@ class CredentialsException(Exception):
     pass
 
 
+class ConnectionClosed(Exception):
+    """Raised when the connection is closed while awaiting a response."""
+
+    pass
+
+
 # TypeAlias for Optional KObj callback
 OptKcb = Optional[Callable[[KObj], None]]
 
@@ -117,6 +123,13 @@ class KdbWriter:
 
     def close(self) -> None:
         self.writer.close()
+        # Complete all pending Futures with a ConnectionClosed exception
+        while self._completions:
+            fut = self._completions.pop(0)
+            if not fut.done():
+                fut.set_exception(
+                    ConnectionClosed("Connection closed while awaiting response")
+                )
 
     async def wait_closed(self) -> None:
         return await self.writer.wait_closed()
