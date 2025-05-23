@@ -188,7 +188,13 @@ def test_vector_b9() -> None:
 
 
 def test_vector_d9() -> None:
-    # assert d9(h2b("0x010000001200000001000400000000010100")).kB() == [False, True, True, False]
+    assert d9(h2b("0x010000001200000001000400000000010100")).kB() == [
+        False,
+        True,
+        True,
+        False,
+    ]
+
     # q)-8!0xC0FFEE
     assert d9(h2b("0x0100000011000000040003000000c0ffee")).kG() == array(
         "B", [192, 255, 238]
@@ -469,7 +475,8 @@ def test_table_uuid_str_column() -> None:
 def test_vector_extras() -> None:
     assert (
         d9b9(
-            ktni(TypeEnum.KP, 769043599044908000), "ktni(12, 769043599044908000)"
+            ktni(TypeEnum.KP, 769043599044908000),
+            "ktni(TypeEnum.KP, 769043599044908000)",
         ).kJ()[0]
         == 769043599044908000
     )
