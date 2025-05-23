@@ -58,7 +58,7 @@ class BoolByteAdaptor(BaseBoolMutSeq):
 
 
 class SymIntAdaptor(BaseSymMutSeq):
-    def __init__(self, data: MutableSequence[int], context: KContext):
+    def __init__(self, data: "MutableSequence[int]", context: KContext):
         self.data = data
         self.context = context
 
