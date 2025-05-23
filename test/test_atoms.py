@@ -240,6 +240,57 @@ def test_vector_d9() -> None:
     assert x.kK()[0].kK() == []
 
 
+def test_vector_mutate_insert() -> None:
+    # verify that mutating the MutableSeq writes back to the underlying KObj
+    k = kk()
+    k.kK().insert(0, kj(0))
+    assert repr(k) == "kk(kj(0))"
+
+    k = ktnb()
+    k.kB().insert(0, False)
+    assert repr(k) == "ktnb(False)"
+
+    k = ktnu()
+    k.kU().insert(0, UUID("e3599f41-e9b7-4452-b8e3-facf91d11633"))
+    assert repr(k) == "ktnu(UUID('e3599f41-e9b7-4452-b8e3-facf91d11633'))"
+
+    k = ktni(TypeEnum.KG)
+    k.kG().insert(0, 1)
+    assert repr(k) == "ktni(TypeEnum.KG, 1)"
+
+    k = ktni(TypeEnum.KH)
+    k.kH().insert(0, 5)
+    assert repr(k) == "ktni(TypeEnum.KH, 5)"
+
+    k = ktni(TypeEnum.KI)
+    k.kI().insert(0, 8)
+    assert repr(k) == "ktni(TypeEnum.KI, 8)"
+
+    k = ktni(TypeEnum.KJ)
+    k.kJ().insert(0, 500)
+    assert repr(k) == "ktni(TypeEnum.KJ, 500)"
+
+    k = ktnf(TypeEnum.KF)
+    k.kF().insert(0, 500)
+    assert repr(k) == "ktnf(TypeEnum.KF, 500.0)"
+
+    k = ktnf(TypeEnum.KE)
+    k.kE().insert(0, 200)
+    assert repr(k) == "ktnf(TypeEnum.KE, 200.0)"
+
+    k = cv("")
+    k.kC().insert(0, "X")
+    assert repr(k) == "cv('X')"
+
+    k = ktns()
+    k.kS().insert(0, "Y")
+    assert repr(k) == "ktns('Y')"
+    k.kS().insert(0, "P")
+    assert repr(k) == "ktns('P', 'Y')"
+    k.kS().insert(2, "Q")
+    assert repr(k) == "ktns('P', 'Y', 'Q')"
+
+
 def test_overflows_KG() -> None:
     k = ktn(TypeEnum.KG, attr=AttrEnum.SORTED)
     with pytest.raises(
