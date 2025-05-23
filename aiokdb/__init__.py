@@ -182,6 +182,9 @@ class KObj:
     def _te(self) -> Exception:
         return WrongTypeForOperationError(f"Not available for {self._tn()}")
 
+    def _te_repr(self) -> str:
+        return f"TypeEnum.{TypeEnum(self.t).name}"
+
     def __len__(self) -> int:
         raise self._te()
 
@@ -609,7 +612,7 @@ class KByteArray(KRangedType):
             return f"ktnb({parts})"
         elif self.t == TypeEnum.KG:
             parts = ", ".join(repr(r) for r in self.kG())
-            return f"ktni(TypeEnum.KG, {parts})"
+            return f"ktni({self._te_repr()}, {parts})"
         else:
             return super().__repr__()
 
@@ -642,7 +645,7 @@ class KShortArray(KRangedType):
 
     def __repr__(self) -> str:
         parts = ", ".join(repr(r) for r in self.kH())
-        return f"ktni(TypeEnum.KH, {parts})"
+        return f"ktni({self._te_repr()}, {parts})"
 
     def kH(self) -> "MutableSequence[int]":
         return self._h
@@ -676,7 +679,7 @@ class KIntArray(KRangedType):
 
     def __repr__(self) -> str:
         parts = ", ".join(repr(r) for r in self.kI())
-        return f"ktni(TypeEnum.KI, {parts})"
+        return f"ktni({self._te_repr()}, {parts})"
 
     def kI(self) -> "MutableSequence[int]":
         return self._i
@@ -753,7 +756,7 @@ class KLongArray(KRangedType):
 
     def __repr__(self) -> str:
         parts = ", ".join(repr(j) for j in self._j)
-        return f"ktni({repr(int(self.t))}, {parts})"
+        return f"ktni({self._te_repr()}, {parts})"
 
     def kJ(self) -> "MutableSequence[int]":
         return self._j
@@ -781,7 +784,7 @@ class KFloatArray(KRangedType):
 
     def __repr__(self) -> str:
         parts = ", ".join(repr(f) for f in self._e)
-        return f"ktnf({repr(int(self.t))}, {parts})"
+        return f"ktnf({self._te_repr()}, {parts})"
 
     def kE(self) -> "MutableSequence[float]":
         return self._e
@@ -809,7 +812,7 @@ class KDoubleArray(KRangedType):
 
     def __repr__(self) -> str:
         parts = ", ".join(repr(f) for f in self._f)
-        return f"ktnf({repr(int(self.t))}, {parts})"
+        return f"ktnf({self._te_repr()}, {parts})"
 
     def kF(self) -> "MutableSequence[float]":
         return self._f
