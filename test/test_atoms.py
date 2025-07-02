@@ -25,6 +25,7 @@ from aiokdb import (
     krr,
     ks,
     ktn,
+    kuu,
     xd,
     xt,
 )
@@ -105,6 +106,10 @@ def test_atoms_d9b9() -> None:
     assert d9b9(cv("9ỹT"), "cv('9ỹT')").aS() == "9ỹT"
     assert d9b9(ks("9ỹT"), "ks('9ỹT')").aS() == "9ỹT"
     assert d9b9(ktns("9ỹT"), "ktns('9ỹT')").kS()[0] == "9ỹT"
+    assert d9b9(
+        kuu(UUID(hex="12345678-1234-5678-1234-567812345678")),
+        "kuu(UUID('12345678-1234-5678-1234-567812345678'))",
+    ).aU() == UUID(hex="12345678-1234-5678-1234567812345678")
 
 
 def test_atoms_d9() -> None:

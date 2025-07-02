@@ -452,6 +452,8 @@ class KObjAtom(KObj):
             return f"kc({repr(self.aC())})"
         elif self.t == TypeEnum.NIL:
             return "ka(TypeEnum.NIL)"
+        elif self.t == -TypeEnum.UU:
+            return f"kuu({repr(self.aU())})"
         else:
             raise Exception(f"__repr__ NYI for t={self.t}")
 
