@@ -160,7 +160,7 @@ def compress(y: bytes) -> Optional[bytes]:
 
     wr[c] = f  # flush flags
     logger.debug(f"compressor: {len(y)} uncompressed bytes down to {d} bytes")
-    return wr[0:d]
+    return bytes(wr[0:d])
 
 
 if __name__ == "__main__":
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         for i in range(spots):
             data[random.randrange(1, sz)] = random.randrange(0, 255)
 
-        bs = compress(data)
+        bs = compress(bytes(data))
         if bs is not None:
             ds = decompress(bs)
             if not ds == data:
