@@ -914,14 +914,12 @@ def d9(data: bytes) -> KObj:
         )
     offset = 8
     if flags == 1:
-        print(data.hex())
         data = decompress(data[8:])
         offset = 0
         msglen = len(data)
     elif flags != 0:
-        print(data.hex())
         raise ValueError(
-            f"unknown payload flags={flags} - not yet implemented, please open an Issue"
+            f"unknown payload flags={flags} - not yet implemented, please open an Issue. Buffer: {data[:16].hex()}"
         )
     try:
         k, pos = _d9_unpackfrom(data, offset=offset)
