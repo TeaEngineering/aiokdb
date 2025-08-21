@@ -22,6 +22,7 @@ from aiokdb import (
     ki,
     kj,
     kk,
+    kp,
     krr,
     ks,
     ktn,
@@ -101,6 +102,7 @@ def test_atoms_d9b9() -> None:
     assert d9b9(kh(12), "kh(12)").aH() == 12
     assert d9b9(ki(12), "ki(12)").aI() == 12
     assert d9b9(kj(12), "kj(12)").aJ() == 12
+    assert d9b9(kp(12), "kp(12)").aJ() == 12
     assert d9b9(kc(" "), "kc(' ')").aC() == " "
     assert d9b9(krr("Error!"), "krr('Error!')").aS() == "Error!"
     assert d9b9(cv("9ỹT"), "cv('9ỹT')").aS() == "9ỹT"
