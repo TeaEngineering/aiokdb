@@ -6,11 +6,37 @@ Python asyncio connector to KDB. Pure python, so does not depend on the `k.h` bi
 
 ## Peer review & motivation
 
-[qPython](https://github.com/exxeleron/qPython) is a widely used library for this task and it maps objects to Pandas Dataframes which might be more suitable for the majority of applications.
+[qPython](https://github.com/exxeleron/qPython) is a widely used library for this task that maps KDB tables to Pandas Dataframes. Sometimes a dependency on numpy/pandas is not desired, or the dynamic type mapping might be unwanted.
 
 This library takes a different approach and aims to replicate using the KDB C-library functions, ie. being 100% explicit about KDB types. It was built working from the publicly documented [Serialisation Examples](https://code.kx.com/q/kb/serialization/) and [C API for kdb+](https://code.kx.com/q/wp/capi/) pages. Users might also need to be familiar with [k.h](https://github.com/KxSystems/ffi/blob/master/include/k.h).
 
-A simple example, using blocking sockets:
+
+```python
+% python
+Python 3.9.22 (main, Apr  8 2025, 15:21:55)
+>>> from aiokdb import *
+>>> from aiokdb.extras import ktns, ktni, ktnb
+>>> x = xt(xd(ktns("hi", "there"), kk(ktni(TypeEnum.KI, 45, 56), ktnb(False, True))))
+>>> x  # shows repr() output
+xt(xd(ktns('hi', 'there'), kk(ktni(TypeEnum.KI, 45, 56), ktnb(False, True))))
+>>> from aiokdb.format import AsciiFormatter
+>>> print(AsciiFormatter().format(x))
+hi there
+--------
+45 0
+56 1
+>>> len(x)
+2
+>>> x[0]
+xd(ktns('hi', 'there'), kk(ki(45), kb(False)))
+>>> print(AsciiFormatter().format(x[1]))
+hi   | 56i
+there| 1
+>>> x[2]
+IndexError
+```
+
+Basic RPC, using blocking sockets:
 
 ```python
 # run ./q -p 12345 &
@@ -25,7 +51,7 @@ result = h.k("2.0+3.0")
 assert result.aF() == 5.0
 
 result.aJ() # raises ValueError: wrong type KF (-9) for aJ
-````
+```
 
 The `result` object is a K-like Python object (a `KObj`), having the usual signed integer type available as `result.type`. Accessors for the primitive types are prefixed with an `a` and check at runtime that the accessor is appropriate for the stored type (`.aI()`, `.aJ()`, `.aH()`, `.aF()` etc.). Atoms store their value to a `bytes` object irrespective of the type, and encode/decode on demand. Atomic values can be set with (`.i(3)`, `.j(12)`, `.ss("hello")`).
 
@@ -118,7 +144,13 @@ s| x                                    y
 $
 ```
 
-Text formatting above is controlled by `aiokdb.format.ASCIIFormatter`, which looks inside a `KObj` to render `XD`, `SD`, `XT` types in tabular form containing atom and vector values. Nested complex types ie. dictionary or table render as `KDict` or `KFlip` constant.
+## Formatting
+
+We implement `repr(KObj)` as a recursively descending, type explicit formatter, suitable for logging complex or unknown responses, albeit whose size could be very large for large datasets. The implementation of `str(KObj)` is non-descending, and will always be constant time/space irrespective of the payload.
+
+Text formatting (as shown above) is controlled by `aiokdb.format.ASCIIFormatter`, which looks inside a `KObj` to render `XD`, `SD`, `XT` types in tabular form containing atom and vector values. Nested complex types ie. dictionary or tables render as the literals `KDict` or `KFlip`, so the outer form is preserved. The output can be bounded by passing arguments to the formatter, e.g. `ASCIIFormatter(width=120, height=20)`.
+
+Finally `aiokdb.format.HtmlFormatter` is suitable for dashboards etc and can be trivially added to web frameworks as a 'template tag' or similar.
 
 ## QDB Files
 Ordinary `.qdb` files written with set can be read by `kfromfile` or written by `ktofile`:
@@ -135,6 +167,8 @@ Ordinary `.qdb` files written with set can be read by `kfromfile` or written by 
 ```
 
 Ordinarily `k` is dictionary representing a KDB namespace containing other objects.
+
+There is no support for splayed or partitioned datasets, however the primitives are (or, at least used to be) the same so this would be possible.
 
 ## Tests
 The library has extensive test coverage, however de-serialisation of certain (obscure) KObj may not be fully supported yet. PR's welcome. All tests are pure python except for those in `test/test_rpc.py`, which will use a real KDB server to test against if you set the `KDB_PYTEST_SERVICE` environment variable (to a URL of the form `kdb://user:password@hostname:port`), otherwise that test is skipped.
