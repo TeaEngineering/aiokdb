@@ -180,7 +180,7 @@ class AsciiFormatter:
         nanos = j % 1000
         micros = j // 1000
         origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
-        dt = datetime.utcfromtimestamp(origin + micros / 1000000.0)
+        dt = datetime.fromtimestamp(origin + micros / 1000000.0, timezone.utc)
         return dt.strftime("%Y.%m.%dD%H:%M:%S:%f") + f"{nanos:03}"
 
     def _fmt_atom_n(self, j: int) -> str:
@@ -206,14 +206,14 @@ class AsciiFormatter:
         if d == Nulls.i:
             return "0Nd"
         origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
-        dt = datetime.utcfromtimestamp(origin + d)
+        dt = datetime.fromtimestamp(origin + d, tz=timezone.utc)
         return dt.strftime("%Y.%m.%d")
 
     def _fmt_atom_z(self, d: float) -> str:
         if d == Nulls.f:
             return "0Nz"
         origin = int(datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp())
-        dt = datetime.utcfromtimestamp(origin + d)
+        dt = datetime.fromtimestamp(origin + d, tz=timezone.utc)
         return dt.strftime("%Y.%m.%dT%H:%M:%S:%f")
 
     def _fmt_atom_u(self, u: int) -> str:
@@ -331,10 +331,6 @@ class AsciiFormatter:
         raise ValueError(f"No inline formatter for {obj} with type {obj._tn()}")
 
 
-def identity(x: str) -> str:
-    return x
-
-
 class HtmlFormatter(AsciiFormatter):
     def __init__(
         self,
@@ -342,14 +338,16 @@ class HtmlFormatter(AsciiFormatter):
         indent: int = 2,
         width: int = 200,
         height: int = 10,
-        markup: Callable[[str], str] = identity,
-        escape: Callable[[str], str] = escape,
     ):
         super().__init__(width, height)
         self.tc = f' class="{table_class}"' if table_class else ""
         self.indent = indent
-        self.markup = markup
-        self.escape = escape
+
+    def html_markup(self, text: str) -> str:
+        return text
+
+    def html_escape(self, text: str) -> str:
+        return escape(text)
 
     def format(self, obj: KObj) -> str:
         if obj.t == TypeEnum.XT:
@@ -358,7 +356,7 @@ class HtmlFormatter(AsciiFormatter):
             return self._fmt_keyed_table(obj)
         elif obj.t == TypeEnum.XD:
             return self._fmt_dict(obj)
-        return self.escape(self._fmt_inline(obj))
+        return self.html_escape(self._fmt_inline(obj))
 
     def _fmt_unkeyed_table(self, obj: KObj) -> str:
         rowcount = self._table_conforms(obj)
@@ -402,10 +400,10 @@ class HtmlFormatter(AsciiFormatter):
                 "</table>",
             ]
         )
-        return self.markup(rowHtml)
+        return self.html_markup(rowHtml)
 
     def _html_cell(self, obj: KObj, col: int, index: Optional[int]) -> str:
-        return self.escape(self._str_cell(obj, col, index))
+        return self.html_escape(self._str_cell(obj, col, index))
 
     def get_table_cell_formatter_for(
         self, kob: KObj, isKey: bool, i: int, colName: str
@@ -460,18 +458,18 @@ class HtmlFormatter(AsciiFormatter):
                 "</table>",
             ]
         )
-        return self.markup(rowHtml)
+        return self.html_markup(rowHtml)
 
     def _fmt_dict(self, obj: KObj) -> str:
         rows = list(self._select_rows(len(obj)))
         ks, vs = [], []
         for r in rows:
-            k = self.escape(self._str_cell(obj.kkey(), 0, r))
-            v = self.escape(self._str_cell(obj.kvalue(), 0, r))
+            k = self.html_escape(self._str_cell(obj.kkey(), 0, r))
+            v = self.html_escape(self._str_cell(obj.kvalue(), 0, r))
             ks.append(k)
             vs.append(v)
 
-        return self.markup(
+        return self.html_markup(
             "".join(
                 [
                     "<dl>\n",
