@@ -197,7 +197,7 @@ The library has extensive test coverage, however de-serialisation of certain (ob
 
 * Formatting with `ruff check .`
 * Formatting with `ruff format .`
-* Check type annotations with `mypy --strict .`
+* Check type annotations with `mypy --strict .` and `ty check`.
 * Run `pytest .` in the root directory
 
 

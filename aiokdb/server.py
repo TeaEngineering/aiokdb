@@ -281,7 +281,7 @@ async def reader_to_context_task(
             else:
                 raise Exception(f"{q_writer.qid} Unexpected incoming message type")
 
-    except asyncio.exceptions.IncompleteReadError:
+    except asyncio.IncompleteReadError:
         # reader is closed, we have nothing more to send
         q_writer.close()
 
@@ -306,7 +306,7 @@ async def handle_connection(
         await reader_to_context_task(q_writer, q_reader, context)
     except asyncio.TimeoutError:
         logging.info(f"{qid} closed - login timeout")
-    except asyncio.exceptions.IncompleteReadError:
+    except asyncio.IncompleteReadError:
         # When kdb process timeout via .timer.timeoutSyncCall
         logging.log(disconnect_log_level, f"{qid} connection reached end of stream")
     except BrokenPipeError:
