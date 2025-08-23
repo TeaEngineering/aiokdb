@@ -139,8 +139,8 @@ def test_format_keyed_table_html() -> None:
             return super().get_table_cell_formatter_for(kob, isKey, i, colName)
 
         def bold_html_cell(self, obj: KObj, col: int, index: Optional[int]) -> str:
-            return self.markup(
-                "<b>" + self.escape(self._str_cell(obj, col, index)) + "</b>"
+            return self.html_markup(
+                "<b>" + self.html_escape(self._str_cell(obj, col, index)) + "</b>"
             )
 
     b = SillyHtmlFormatter()
