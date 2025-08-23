@@ -12,6 +12,9 @@ markers = [
     "asyncio",
 ]
 
+[tool.ty.environment]
+python = "./.venv"
+
 [project]
 name = "aiokdb"
 authors = [
