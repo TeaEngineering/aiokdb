@@ -8,6 +8,8 @@ class KContext:
         self._symbol_bytes: List[bytes] = []
 
     def ss(self, s: str) -> int:
+        if not isinstance(s, str):
+            raise TypeError("Can only enumerate strings")
         idx = self.symbols.setdefault(s, len(self.symbols))
         if idx == len(self._symbol_str):
             bs = bytes(s, "utf-8") + b"\x00"
