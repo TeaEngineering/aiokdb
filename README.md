@@ -58,52 +58,52 @@ The `result` object is a K-like Python object (a `KObj`), having the usual signe
 Arrays are implemented with subtypes that use [Python's native arrays module](https://docs.python.org/3/library/array.html) for efficient array types. The `MutableSequence` arrays are returned using the usual array accessor functions `.kI()`, `.kB()`, `.kS()` etc.
 
 ```
- kdb type name       python    python    python       python  python
-  n   c              TypeEnum  accessor  setter       create  type
- ------------------------------------------------------------------------------------
- -19  t   time       -KT       -         -            -       -
- -18  v   second     -KV       -         -            -       -
- -17  u   minute     -KU       -         -            -       -
- -16  n   timespan   -KN       -         -            -       -
- -15  z   datetime   -KZ       -         -            -       -
- -14  d   date       -KD       -         -            -       -
- -13  m   month      -KM       -         -            -       -
- -12  p   timestamp  -KP       -         -            -       -
- -11  s   symbol     -KS       .aS()     .ss("sym")   ks()    str
- -10  c   char       -KC       .aC()     .c("c")      kc()    str (len 1)
-  -9  f   float      -KF       .aF()     .f(6.1)      kf()    float
-  -8  e   real       -KE       .aE()     .f(6.2)      ke()    float
-  -7  j   long       -KJ       .aJ()     .j(7)        kj()    int
-  -6  i   int        -KI       .aI()     .i(6)        ki()    int
-  -5  h   short      -KH       .aH()     .h(5)        kh()    int
-  -4  x   byte       -KG       .aG()     .g(4)        kg()    int
-  -2  g   guid       -UU       .aU()     .uu(UUID())  kuu()   uuid.UUID
-  -1  b   boolean    -KB       .aB()     .b(True)     kb()    bool
-   0  *   list        K        .kK()     -            kk()    MutableSequence[KObj]
-   1  b   boolean     KB       .kB()     -            ktnb()  MutableSequence[bool]
-   2  g   guid        UU       .kU()     -            ktnu()  MutableSequence[uuid.UUID]
-   4  x   byte        KG       .kG()     -            ktni()  MutableSequence[int]
-   5  h   short       KH       .kH()     -            ktni()  MutableSequence[int]
-   6  i   int         KI       .kI()     -            ktni()  MutableSequence[int]
-   7  j   long        KJ       .kJ()     -            ktni()  MutableSequence[int]
-   8  e   real        KE       .kE()     -            ktnf()  MutableSequence[float]
-   9  f   float       KF       .kF()     -            ktnf()  MutableSequence[float]
-  10  c   char        KC       .kC()     -            cv()    array.array
-  11  s   symbol      KS       .kS()     -            ktns()  MutableSequence[str]
-  12  p   timestamp   KP       -         -            -       -
-  13  m   month       KM       -         -            -       -
-  14  d   date        KD       -         -            -       -
-  15  z   datetime    KZ       -         -            -       -
-  16  n   timespan    KN       -         -            -       -
-  17  u   minute      KU       -         -            -       -
-  18  v   second      KV       -         -            -       -
-  19  t   time        KT       -         -            -       -
-  98      flip        XT       .kkey(), .kvalue()     xt()    KObj, KObj
-  99      dict        XD       .kkey(), .kvalue()     xd()    KObj, KObj
- 100      function    FN       -         -            KFnAtom       -
- 101  ::  nil        NIL       -         -            kNil    -
- 127      `s#dict     SD       .kkey(), .kvalue()     -       KObj, KObj
--128  '   err        KRR       .aS()     .ss()        krr()   str
+ kdb type name       python    python      python       python  python
+  n   c              TypeEnum  accessor    setter       create  type
+ --------------------------------------------------------------------------------------
+ -19  t   time       -KT       -           -            -       -
+ -18  v   second     -KV       -           -            -       -
+ -17  u   minute     -KU       -           -            -       -
+ -16  n   timespan   -KN       -           -            -       -
+ -15  z   datetime   -KZ       -           -            -       -
+ -14  d   date       -KD       -           -            -       -
+ -13  m   month      -KM       -           -            -       -
+ -12  p   timestamp  -KP       -           -            -       -
+ -11  s   symbol     -KS       .aS()       .ss("sym")   ks()    str
+ -10  c   char       -KC       .aC()       .c("c")      kc()    str (len 1)
+  -9  f   float      -KF       .aF()       .f(6.1)      kf()    float
+  -8  e   real       -KE       .aE()       .f(6.2)      ke()    float
+  -7  j   long       -KJ       .aJ()       .j(7)        kj()    int
+  -6  i   int        -KI       .aI()       .i(6)        ki()    int
+  -5  h   short      -KH       .aH()       .h(5)        kh()    int
+  -4  x   byte       -KG       .aG()       .g(4)        kg()    int
+  -2  g   guid       -UU       .aU()       .uu(UUID())  kuu()   uuid.UUID
+  -1  b   boolean    -KB       .aB()       .b(True)     kb()    bool
+   0  *   list        K        .kK()       -            kk()    MutableSequence[KObj]
+   1  b   boolean     KB       .kB()       -            ktnb()  MutableSequence[bool]
+   2  g   guid        UU       .kU()       -            ktnu()  MutableSequence[uuid.UUID]
+   4  x   byte        KG       .kG()       -            ktni()  MutableSequence[int]
+   5  h   short       KH       .kH()       -            ktni()  MutableSequence[int]
+   6  i   int         KI       .kI()       -            ktni()  MutableSequence[int]
+   7  j   long        KJ       .kJ()       -            ktni()  MutableSequence[int]
+   8  e   real        KE       .kE()       -            ktnf()  MutableSequence[float]
+   9  f   float       KF       .kF()       -            ktnf()  MutableSequence[float]
+  10  c   char        KC       .kC(),.aS() -            cv()    array.array, str
+  11  s   symbol      KS       .kS()       -            ktns()  MutableSequence[str]
+  12  p   timestamp   KP       -           -            -       -
+  13  m   month       KM       -           -            -       -
+  14  d   date        KD       -           -            -       -
+  15  z   datetime    KZ       -           -            -       -
+  16  n   timespan    KN       -           -            -       -
+  17  u   minute      KU       -           -            -       -
+  18  v   second      KV       -           -            -       -
+  19  t   time        KT       -           -            -       -
+  98      flip        XT       .kkey(), .kvalue()       xt()    KObj, KObj
+  99      dict        XD       .kkey(), .kvalue()       xd()    KObj, KObj
+ 100      function    FN       -           -            KFnAtom       -
+ 101  ::  nil        NIL       -           -            kNil    -
+ 127      `s#dict     SD       .kkey(), .kvalue()       -       KObj, KObj
+-128  '   err        KRR       .aS()       .ss()        krr()   str
 ```
 
 Serialisation is handled by the `b9` function, which encodes a `KObj` to a python `bytes`, and the `d9` function which takes a `bytes` and returns a `KObj`.
@@ -169,6 +169,28 @@ Ordinary `.qdb` files written with set can be read by `kfromfile` or written by 
 Ordinarily `k` is dictionary representing a KDB namespace containing other objects.
 
 There is no support for splayed or partitioned datasets, however the primitives are (or, at least used to be) the same so this would be possible.
+
+## Char vectors
+Char vectors are created with `cv` and symbols with `ks`, both from a string. They both support returning immutable python strings with accessor `.aS()`. You can also return a char vector as a *mutable* string (writing back to the KObj) as an array of characters with `.kC()`, however this is an unusual pattern to use in python:
+
+```python
+>>> x = cv('hello')
+>>> x.kC()
+array('u', 'hello')
+>>> x.aS()
+'hello'
+>>> x.kC()[3] = 'u'; x
+cv('heluo')
+# With symbol
+>>> ks("hello").aS()
+'hello'
+>>> ks("hello").kC()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "lib/python3.9/site-packages/aiokdb/__init__.py", line 262, in kC
+    raise self._te()
+aiokdb.WrongTypeForOperationError: Not available for KS (-11)
+```
 
 ## Tests
 The library has extensive test coverage, however de-serialisation of certain (obscure) KObj may not be fully supported yet. PR's welcome. All tests are pure python except for those in `test/test_rpc.py`, which will use a real KDB server to test against if you set the `KDB_PYTEST_SERVICE` environment variable (to a URL of the form `kdb://user:password@hostname:port`), otherwise that test is skipped.
