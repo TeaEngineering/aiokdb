@@ -3,7 +3,7 @@ import asyncio
 import logging
 import struct
 from typing import Any, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from aiokdb import cv, logger
 from aiokdb.server import (
@@ -73,20 +73,47 @@ async def open_qipc_connection(
     return q_reader, q_writer
 
 
-async def maintain_qipc_connection(uri: Optional[str], context: ClientContext) -> None:
+async def maintain_qipc_connection(
+    uri: str, context: ClientContext, raise_bad_creds: bool = False
+) -> None:
+    masked_uri = mask_uri(uri)
     while True:
         try:
-            logging.info("attempting connection")
+            logging.info(f"attempting connection to {masked_uri}")
             qr, qw = await open_qipc_connection(uri=uri, context=context)
             await qw.writer.wait_closed()
-            logging.info("connection closed")
+            logging.info(f"connection closed for {masked_uri}")
         except CredentialsException:
-            raise
+            logging.warning(f"CredentialsException reported for {masked_uri}")
+            if raise_bad_creds:
+                raise
+            await asyncio.sleep(10)
         except Exception:
-            logging.exception("caught exception")
+            logging.exception(f"caught exception {masked_uri}")
             await asyncio.sleep(10)
 
-    logging.info("retry loop exited?")
+    logging.info(f"retry loop exited for {masked_uri}")
+
+
+def mask_uri(uri: str) -> str:
+    """
+    Return a version of the URI safe for logging — any password in the
+    userinfo part (user:pass@) is replaced with '***'.
+    """
+    try:
+        parsed = urlparse(uri)
+        # Rebuild netloc with redacted password if needed
+        userinfo = parsed.username or ""
+        if parsed.password:
+            userinfo += ":***"
+        netloc = f"{parsed.hostname}"
+        if userinfo:
+            netloc = f"{userinfo}@{parsed.hostname}"
+        if parsed.port:
+            netloc += f":{parsed.port}"
+        return urlunparse(parsed._replace(netloc=netloc))
+    except Exception:
+        return uri
 
 
 if __name__ == "__main__":
