@@ -4,7 +4,7 @@ from typing import List, Optional
 import pytest
 
 from aiokdb import KException, KObj, MessageType, TypeEnum, cv, kj, kNil
-from aiokdb.client import open_qipc_connection
+from aiokdb.client import mask_uri, open_qipc_connection
 from aiokdb.extras import MagicClientContext, MagicServerContext, _string_to_functional
 from aiokdb.server import CredentialsException, KdbWriter, ServerContext, start_qserver
 
@@ -271,3 +271,16 @@ async def test_client_speaks_first() -> None:
 
     server.close()
     await server.wait_closed()
+
+
+def test_safe_uri() -> None:
+    assert (
+        mask_uri("https://user:secret@example.com/path")
+        == "https://user:***@example.com/path"
+    )
+    assert mask_uri("https://example.com/path") == "https://example.com/path"
+    assert (
+        mask_uri("postgres://user:topsecret@localhost:5432/db")
+        == "postgres://user:***@localhost:5432/db"
+    )
+    assert mask_uri("kdb://:passwd@eg.com") == "kdb://:***@eg.com"
