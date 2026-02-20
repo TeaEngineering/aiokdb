@@ -20,6 +20,14 @@ class ConnectionClosed(Exception):
     pass
 
 
+class ReentrantRequestError(Exception):
+    """Raised when sync_req is called from within the reader task's handler,
+    which would deadlock because the reader task cannot read the response
+    while it is blocked waiting for the handler to return."""
+
+    pass
+
+
 # TypeAlias for Optional KObj callback
 OptKcb = Optional[Callable[[KObj], None]]
 
@@ -62,6 +70,7 @@ class KdbWriter:
         self.version = version
         self.reader = kreader
         self._context = context
+        self._reader_task: Optional[asyncio.Task[None]] = None
         self._completions: List[asyncio.Future[KObj]] = []
 
     def write(self, obj: KObj, mt: MessageType = MessageType.SYNC) -> None:
@@ -87,6 +96,17 @@ class KdbWriter:
         # ooob is out-of-order-buffer, to optionally capture any async messages
         # or sync requests found while waiting for our response, if a context
         # has not been setup (deprecated - use a context)
+        if (
+            self._reader_task is not None
+            and asyncio.current_task() is self._reader_task
+        ):
+            raise ReentrantRequestError(
+                "sync_req() called from within an async message or sync request "
+                "handler on the same connection. This would deadlock because the "
+                "reader task cannot process the response while blocked in the "
+                "handler. Use asyncio.create_task() to run the request in a "
+                "separate task."
+            )
         f: asyncio.Future[KObj] = asyncio.Future()
         self._completions.append(f)
         self.write(obj, MessageType.SYNC)
@@ -216,6 +236,7 @@ async def process_login(
 async def reader_to_context_task(
     q_writer: KdbWriter, q_reader: KdbReader, context: BaseContext
 ) -> None:
+    q_writer._reader_task = asyncio.current_task()
     # use a new task for this notification as it might await the completion of
     # a future that we later dispatch via. q_writer.on_response(...)
     task = asyncio.create_task(context.writer_available(q_writer))
