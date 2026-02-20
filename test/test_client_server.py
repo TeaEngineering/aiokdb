@@ -6,7 +6,13 @@ import pytest
 from aiokdb import KException, KObj, MessageType, TypeEnum, cv, kj, kNil
 from aiokdb.client import mask_uri, open_qipc_connection
 from aiokdb.extras import MagicClientContext, MagicServerContext, _string_to_functional
-from aiokdb.server import CredentialsException, KdbWriter, ServerContext, start_qserver
+from aiokdb.server import (
+    CredentialsException,
+    KdbWriter,
+    ReentrantRequestError,
+    ServerContext,
+    start_qserver,
+)
 
 
 @pytest.mark.asyncio
@@ -265,6 +271,68 @@ async def test_client_speaks_first() -> None:
 
     r = await fut
     assert r.aJ() == 32
+
+    client_wr.close()
+    await client_wr.wait_closed()
+
+    server.close()
+    await server.wait_closed()
+
+
+@pytest.mark.asyncio
+async def test_reentrant_sync_req_from_async_handler() -> None:
+    """Calling sync_req from within on_async_message would deadlock.
+    Verify that ReentrantRequestError is raised instead."""
+
+    caught: Optional[Exception] = None
+
+    class ReentrantServerContext(ServerContext):
+        async def on_async_message(self, cmd: KObj, dotzw: KdbWriter) -> None:
+            nonlocal caught
+            try:
+                await dotzw.sync_req(cv("should_deadlock"))
+            except ReentrantRequestError as e:
+                caught = e
+
+    context = ReentrantServerContext()
+    server = await start_qserver(6778, context)
+
+    client_rd, client_wr = await open_qipc_connection(port=6778)
+
+    # send an async message to the server, triggering the handler
+    client_wr.write(cv("hello"), MessageType.ASYNC)
+    await asyncio.sleep(0.1)
+
+    assert caught is not None
+    assert isinstance(caught, ReentrantRequestError)
+
+    client_wr.close()
+    await client_wr.wait_closed()
+
+    server.close()
+    await server.wait_closed()
+
+
+@pytest.mark.asyncio
+async def test_reentrant_sync_req_from_sync_handler() -> None:
+    """Server handler calls sync_req back to the client from within
+    on_sync_request — this would deadlock. Verify ReentrantRequestError
+    is raised and propagated to the caller as a KException."""
+
+    class CallbackServerContext(MagicServerContext):
+        async def callclient(self, args: KObj, dotzw: KdbWriter) -> KObj:
+            # server tries to sync_req back to the client from within its
+            # own reader task handler — should raise ReentrantRequestError
+            return await dotzw.sync_req(cv("hello[]"))
+
+    server = await start_qserver(6778, CallbackServerContext())
+
+    client_rd, client_wr = await open_qipc_connection(port=6778)
+
+    # client sends sync request; server handler tries to sync_req back,
+    # gets ReentrantRequestError, which is returned as KRR to the client
+    with pytest.raises(KException, match="sync_req.*called from within"):
+        await client_wr.sync_req(cv("callclient[]"))
 
     client_wr.close()
     await client_wr.wait_closed()
