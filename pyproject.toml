@@ -12,8 +12,8 @@ markers = [
     "asyncio",
 ]
 
-[tool.ty.environment]
-python = "./.venv"
+[tool.ty.rules]
+redundant-cast = "ignore"
 
 [project]
 name = "aiokdb"
