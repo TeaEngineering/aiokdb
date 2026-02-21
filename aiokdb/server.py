@@ -47,7 +47,7 @@ class KdbReader:
         if len(payload) < 1000 and logging.getLogger().isEnabledFor(logging.DEBUG):
             logger.debug(f"> recv buffer={msgh + payload!r}")
         k = d9(msgh + payload)
-        return msgtype, k
+        return MessageType(msgtype), k
 
     async def read(self) -> Tuple[MessageType, KObj]:
         msgtype, k = await self._read()

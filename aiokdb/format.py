@@ -426,7 +426,10 @@ class HtmlFormatter(AsciiFormatter):
             (obj, True, i, s) for i, s in enumerate(ktk.kS())
         ] + [(obj, False, i, s) for i, s in enumerate(ktv.kS())]
 
-        table_col_formatters = [self.get_table_cell_formatter_for(*x) for x in colMeta]
+        table_col_formatters = [
+            self.get_table_cell_formatter_for(kob, isKey, i, colName)
+            for kob, isKey, i, colName in colMeta
+        ]
         rowSample: List[List[Tuple[str, bool]]] = []
         for r in rows:
             cs = []

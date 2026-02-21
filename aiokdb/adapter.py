@@ -43,11 +43,11 @@ class BoolByteAdaptor(BaseBoolMutSeq):
         else:
             raise TypeError()
 
-    def insert(self, index: int, item: bool) -> None:
-        self.data.insert(index, {True: 1, False: 0}[item])
+    def insert(self, index: int, value: bool) -> None:
+        self.data.insert(index, {True: 1, False: 0}[value])
 
-    def __delitem__(self, item: Union[int, slice]) -> None:
-        del self.data[item]
+    def __delitem__(self, index: Union[int, slice[int | None]]) -> None:
+        del self.data[index]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Sequence):
@@ -90,11 +90,11 @@ class SymIntAdaptor(BaseSymMutSeq):
         else:
             raise TypeError()
 
-    def insert(self, index: int, item: str) -> None:
-        self.data.insert(index, self.context.ss(item))
+    def insert(self, index: int, value: str) -> None:
+        self.data.insert(index, self.context.ss(value))
 
-    def __delitem__(self, item: Union[int, slice]) -> None:
-        del self.data[item]
+    def __delitem__(self, index: Union[int, slice[int | None]]) -> None:
+        del self.data[index]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Sequence):
