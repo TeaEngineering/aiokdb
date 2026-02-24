@@ -258,7 +258,7 @@ class KObj:
     def kF(self) -> "MutableSequence[float]":
         raise self._te()
 
-    def kC(self) -> array.array:  # type: ignore[type-arg]
+    def kC(self) -> "array.array[str]":
         raise self._te()
 
     def kS(self) -> "MutableSequence[str]":
@@ -824,7 +824,7 @@ class KCharArray(KRangedType):
     def __repr__(self) -> str:
         return f"cv({repr(self.aS())})"
 
-    def kC(self) -> array.array:  # type: ignore[type-arg]
+    def kC(self) -> "array.array[str]":
         return self._c
 
     def aS(self) -> str:
