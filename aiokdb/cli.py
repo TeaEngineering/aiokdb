@@ -3,15 +3,30 @@ import asyncio
 import logging
 import os
 import traceback
-from typing import Any
+from typing import Any, Optional
 
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import PromptSession
 
 from aiokdb import TypeEnum, cv
-from aiokdb.client import open_qipc_connection
+from aiokdb.client import (
+    ClientContext,
+    KdbWriter,
+    maintain_qipc_connection,
+)
 from aiokdb.format import AsciiFormatter
+
+
+class CliClientContext(ClientContext):
+    def __init__(self) -> None:
+        self.writer: Optional[KdbWriter] = None
+
+    async def writer_available(self, dotzw: KdbWriter) -> None:
+        self.writer = dotzw
+
+    def writer_closing(self, dotzw: KdbWriter) -> None:
+        self.writer = None
 
 
 async def main(args: Any) -> None:
@@ -23,8 +38,12 @@ async def main(args: Any) -> None:
     if password is None:
         password = await session.prompt_async("Password:", is_password=True)
 
-    r, w = await open_qipc_connection(
-        host=args.host, port=args.port, user=args.user, password=password
+    cc = CliClientContext()
+
+    task = asyncio.create_task(
+        maintain_qipc_connection(
+            uri=f"kdb://{args.user}:{password}@{args.host}:{args.port}", context=cc
+        )
     )
 
     # Run echo loop. Read text from stdin, and reply it back.
@@ -33,15 +52,22 @@ async def main(args: Any) -> None:
             inp = await session.prompt_async("q)", is_password=False)
             if inp == "":
                 continue
-            output = await w.sync_req(cv(inp))
-            if output.t != TypeEnum.NIL:
-                print(fmt.format(output))
+            if not cc.writer:
+                print("Writer not connected, wait for re-connect")
+            else:
+                output = await cc.writer.sync_req(cv(inp))
+                if output.t != TypeEnum.NIL:
+                    print(fmt.format(output))
         except KeyboardInterrupt:
             return
         except EOFError:
             break
         except Exception:
             traceback.print_exc(limit=-2)
+
+    task.cancel()
+    await task
+
     return None
 
 

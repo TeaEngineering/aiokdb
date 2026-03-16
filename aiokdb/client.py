@@ -100,20 +100,17 @@ def mask_uri(uri: str) -> str:
     Return a version of the URI safe for logging — any password in the
     userinfo part (user:pass@) is replaced with '***'.
     """
-    try:
-        parsed = urlparse(uri)
-        # Rebuild netloc with redacted password if needed
-        userinfo = parsed.username or ""
-        if parsed.password:
-            userinfo += ":***"
-        netloc = f"{parsed.hostname}"
-        if userinfo:
-            netloc = f"{userinfo}@{parsed.hostname}"
-        if parsed.port:
-            netloc += f":{parsed.port}"
-        return urlunparse(parsed._replace(netloc=netloc))
-    except Exception:
-        return uri
+    parsed = urlparse(uri)
+    # Rebuild netloc with redacted password if needed
+    userinfo = parsed.username or ""
+    if parsed.password:
+        userinfo += ":***"
+    netloc = f"{parsed.hostname}"
+    if userinfo:
+        netloc = f"{userinfo}@{parsed.hostname}"
+    if parsed.port:
+        netloc += f":{parsed.port}"
+    return urlunparse(parsed._replace(netloc=netloc))
 
 
 if __name__ == "__main__":
