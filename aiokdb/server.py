@@ -4,10 +4,16 @@ import itertools
 import logging
 import os
 import struct
+import sys
 from functools import partial
 from typing import Any, Callable, List, Optional, Tuple
 
 from aiokdb import KException, KObj, MessageType, TypeEnum, b9, d9, krr, logger
+
+if sys.version_info >= (3, 9):
+    AsyncioServer = asyncio.Server
+else:
+    AsyncioServer = Any
 
 
 class CredentialsException(Exception):
@@ -321,7 +327,7 @@ async def handle_connection(
             pass
 
 
-async def start_qserver(port: int, context: ServerContext) -> Any:
+async def start_qserver(port: int, context: ServerContext) -> AsyncioServer:
     logging.info(f"opening KDB-q IPC server on port {port}")
     server = await asyncio.start_server(partial(handle_connection, context), "", port)
     await context.start_tasks()
