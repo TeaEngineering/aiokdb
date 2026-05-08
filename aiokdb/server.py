@@ -321,7 +321,7 @@ async def handle_connection(
             pass
 
 
-async def start_qserver(port: int, context: ServerContext) -> Any:
+async def start_qserver(port: int, context: ServerContext) -> asyncio.Server:
     logging.info(f"opening KDB-q IPC server on port {port}")
     server = await asyncio.start_server(partial(handle_connection, context), "", port)
     await context.start_tasks()
