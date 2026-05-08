@@ -66,6 +66,7 @@ class Nulls:
     c: str = " "
     e: float = float("nan")
     f: float = float("nan")
+    uu: uuid.UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
 
 
 class Infs:
