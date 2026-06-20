@@ -8,7 +8,7 @@ import sys
 from functools import partial
 from typing import Any, Callable, List, Optional, Tuple
 
-from aiokdb import KException, KObj, MessageType, TypeEnum, b9, d9, krr, logger
+from aiokdb import KException, KObj, MessageType, TypeEnum, b9, d9, kNil, krr, logger
 
 if sys.version_info >= (3, 9):
     AsyncioServer = asyncio.Server
@@ -335,7 +335,14 @@ async def start_qserver(port: int, context: ServerContext) -> AsyncioServer:
 
 
 async def main(qpassword: str, qport: int) -> None:
-    context = ServerContext(qpassword)
+    class DelayedServerContext(ServerContext):
+        async def on_sync_request(self, cmd: KObj, dotzw: KdbWriter) -> KObj:  # .z.pg
+            logging.info("Got request")
+            await asyncio.sleep(1)
+            logging.info("sending response")
+            return kNil
+
+    context = DelayedServerContext(qpassword)
     server = await start_qserver(qport, context)
     async with server:
         await server.serve_forever()
