@@ -9,6 +9,7 @@ from aiokdb import (
     KObj,
     MessageType,
     TypeEnum,
+    _d9_unpackfrom,
     b9,
     cv,
     d9,
@@ -30,7 +31,7 @@ from aiokdb import (
     xd,
     xt,
 )
-from aiokdb.extras import ktnb, ktnf, ktni, ktns, ktnu
+from aiokdb.extras import ktnb, ktne, ktnf, ktni, ktns, ktnu
 
 
 def h2b(hx: str) -> bytes:
@@ -589,3 +590,37 @@ def test_table_index_dict_on_syms() -> None:
     d.t == TypeEnum.XD
     d["x"].aS() == "d"
     d["y"].aJ() == 2
+
+
+def test_enum() -> None:
+    # captured from a .qdb file: xt(xd(ktns('eid','sc'), kk(
+    #   enum column `kt indexing [2,0,1,0,1,0], ktni(KJ, 126,36,92,39,98,42))))
+    data = h2b(
+        "0x62"
+        "00630b00020000006569640073630000000200000015"
+        "6b740000060000000200000000000000010000000000000001000000000000000700060000"
+        "007e0000000000000024000000000000005c00000000000000270000000000000062000000"
+        "000000002a00000000000000"
+    )
+    k, pos = _d9_unpackfrom(data, 0)
+    assert pos == len(data)
+    enumcol = k.kvalue().kvalue().kK()[0]
+    assert enumcol.t == 21
+    assert enumcol.ename() == "kt"
+    assert list(enumcol.kI()) == [2, 0, 1, 0, 1, 0]
+    assert enumcol._databytes() == data[22 : 22 + len(enumcol._databytes())]
+
+
+def test_ktne() -> None:
+    v = ktne(21, "kt", 2, 0, 1, 0, 1, 0)
+    assert v.t == 21
+    assert v.ename() == "kt"
+    assert list(v.kI()) == [2, 0, 1, 0, 1, 0]
+    assert repr(v) == "ktne(21, 'kt', 2, 0, 1, 0, 1, 0)"
+    assert_er(v)
+
+    k, pos = _d9_unpackfrom(v._databytes(), 0)
+    assert pos == len(v._databytes())
+    assert k.t == 21
+    assert k.ename() == "kt"
+    assert list(k.kI()) == [2, 0, 1, 0, 1, 0]

@@ -22,7 +22,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: python -m pip install --upgrade pip
-    - run: python -m pip install "ruff<1" "mypy<2" pytest
+    - run: python -m pip install "ruff<0.10" "mypy<2" pytest
     - run: pip install -r requirements.txt
     - run: ruff check .
     - run: ruff format --check .
