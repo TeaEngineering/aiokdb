@@ -265,6 +265,9 @@ class KObj:
     def kS(self) -> "MutableSequence[str]":
         raise self._te()
 
+    def ename(self) -> str:
+        raise self._te()
+
     # dictionary/flip
     def kkey(self) -> "KObj":
         raise self._te()
@@ -725,6 +728,34 @@ class KIntSymArray(KIntArray):
         return self, offset
 
 
+class KIntEnumArray(KIntArray):
+    # enum vector: type byte (20-76) is followed by a null terminated domain
+    # name, then a regular int vector (attrib, count, int32[count])
+    def __init__(self, t: int = 20, sz: int = 0, name: str = "") -> None:
+        super().__init__(t, sz=sz)
+        self._name: str = name
+
+    def _paysz(self) -> int:
+        return len(self._name.encode()) + 1 + super()._paysz()
+
+    def _databytes(self) -> bytes:
+        parts = [struct.pack("<b", self.t), self._name.encode(), b"\x00"]
+        parts.append(super()._databytes()[1:])  # drop the duplicated type byte
+        return b"".join(parts)
+
+    def __repr__(self) -> str:
+        parts = ", ".join(repr(r) for r in self.kI())
+        return f"ktne({self.t}, {self._name!r}, {parts})"
+
+    def ename(self) -> str:
+        return self._name
+
+    def frombytes(self, data: bytes, offset: int) -> Tuple[KObj, int]:
+        name_end = data.index(b"\x00", offset)
+        self._name = data[offset:name_end].decode("utf-8")
+        return super().frombytes(data, name_end + 1)
+
+
 class KLongArray(KRangedType):
     def __init__(self, t: int = TypeEnum.KJ, sz: int = 0, attr: int = 0) -> None:
         super().__init__(t, attr=attr)
@@ -964,8 +995,8 @@ def _d9_unpackfrom(data: bytes, offset: int) -> Tuple[KObj, int]:
         return KFnAtom().frombytes(data, offset)
     elif t == TypeEnum.OP:
         return KOpAtom().frombytes(data, offset)
-    elif t >= 20 and t < 30:
-        return VECTOR_CONSTUCTORS[TypeEnum.KJ](t).frombytes(data, offset)
+    elif t >= 20 and t < 77:
+        return KIntEnumArray(t).frombytes(data, offset)
     raise ValueError(f"Unable to d9 unpack t={t}")
 
 

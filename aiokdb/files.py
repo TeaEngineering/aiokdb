@@ -17,7 +17,7 @@ def kfromfile(filename: PathLike) -> KObj:
         elif rb[0:2] == b"\xfd ":
             raise Exception("Unsupported v2 QDB serialisation format")
         else:
-            raise Exception(f"Unknown serialisation format {rb[0:2]}")
+            raise Exception(f"Unknown serialisation format {rb[0:2]!r}")
 
 
 def ktofile(k: KObj, filename: PathLike) -> None:

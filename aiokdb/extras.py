@@ -3,7 +3,20 @@ import re
 import uuid
 from typing import cast
 
-from aiokdb import KIntArray, KLongArray, KObj, TypeEnum, kb, kj, kk, kNil, ks, ktn, tn
+from aiokdb import (
+    KIntArray,
+    KIntEnumArray,
+    KLongArray,
+    KObj,
+    TypeEnum,
+    kb,
+    kj,
+    kk,
+    kNil,
+    ks,
+    ktn,
+    tn,
+)
 from aiokdb.client import ClientContext
 from aiokdb.server import KdbWriter, ServerContext
 
@@ -22,6 +35,12 @@ def ktni(t: TypeEnum, *ints: int) -> KObj:
         v.kJ().extend(ints)
     else:
         raise ValueError(f"No int array initialiser for {tn(t)}")
+    return v
+
+
+def ktne(t: int, name: str, *idxs: int) -> KObj:
+    v = KIntEnumArray(t, name=name)
+    v.kI().extend(idxs)
     return v
 
 
