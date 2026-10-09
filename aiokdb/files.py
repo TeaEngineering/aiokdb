@@ -11,9 +11,13 @@ def kfromfile(filename: PathLike) -> KObj:
     with open(filename, "rb") as f:
         # theres no length header since files have a size
         rb = f.read()
-        assert rb[0:2] == b"\xff\x01"
-        k, _ = _d9_unpackfrom(rb, 2)
-        return k
+        if rb[0:2] == b"\xff\x01":
+            k, _ = _d9_unpackfrom(rb, 2)
+            return k
+        elif rb[0:2] == b"\xfd ":
+            raise Exception("Unsupported v2 QDB serialisation format")
+        else:
+            raise Exception(f"Unknown serialisation format {rb[0:2]}")
 
 
 def ktofile(k: KObj, filename: PathLike) -> None:
