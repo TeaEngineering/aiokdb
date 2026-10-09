@@ -160,6 +160,11 @@ class AsciiFormatter:
             return self._fmt_atom_p(j)
         elif obj.t == TypeEnum.KC:
             return obj.aS()[index]
+        elif obj.t >= 20 and obj.t < 77:
+            i = obj.kI()[index]
+            if i == Nulls.i:
+                return ""
+            return f"{obj.ename()}!{i}"
         raise ValueError(f"No cell formatter for {obj} with type {obj._tn()}")
 
     def _fmt_atom_j(self, j: int) -> str:
@@ -315,6 +320,11 @@ class AsciiFormatter:
 
         elif obj.t > 0 and obj.t < 20:
             # sample the vector (first five?)
+            elems = list(self._select_rows(len(obj)))
+            ks = " ".join([self._str_cell(obj, 0, r) for r in elems])
+            return ks
+        elif obj.t >= 20 and obj.t < 77:
+            # enum vector
             elems = list(self._select_rows(len(obj)))
             ks = " ".join([self._str_cell(obj, 0, r) for r in elems])
             return ks
