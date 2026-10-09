@@ -2,7 +2,7 @@ import uuid
 from typing import Callable, Optional
 
 from aiokdb import KObj, TypeEnum, cv, d9, ka, kj, kk, ks, ktn, xd, xt
-from aiokdb.extras import ktni, ktns
+from aiokdb.extras import ktne, ktni, ktns
 from aiokdb.format import AsciiFormatter, HtmlFormatter
 
 
@@ -226,3 +226,16 @@ def test_format_atoms() -> None:
 
     p = ktni(TypeEnum.KJ, *range(20))
     assert fmt.format(p) == "0 1 ... 18 19"
+
+
+def test_format_enum_table() -> None:
+    fmt = AsciiFormatter(height=8)
+
+    ks = ktns("eid", "sc")
+    kv = kk(ktne(21, "kt", 2, 0, 1), ktni(TypeEnum.KJ, 126, 36, 92))
+    t = xt(xd(ks, kv))
+
+    assert fmt.format(t) == "eid  sc \n--------\nkt!2 126\nkt!0 36 \nkt!1 92 "
+
+    p = ktne(21, "kt", 2, 0, 1)
+    assert fmt.format(p) == "kt!2 kt!0 kt!1"
